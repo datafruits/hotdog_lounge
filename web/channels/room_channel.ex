@@ -29,18 +29,32 @@ defmodule Chat.RoomChannel do
     push socket, "join", %{status: "connected"}
     {:noreply, socket}
   end
+
   def handle_info(:ping, socket) do
     push socket, "new:msg", %{user: "SYSTEM", body: "ping"}
     {:noreply, socket}
   end
 
+  def handle_info({:after_authorize, msg}, socket) do
+    broadcast! socket, "user:authorized", %{user: msg["user"]}
+    push socket, "authorized", %{status: "authorized"}
+    {:noreply, socket}
+  end
+
   def terminate(reason, _socket) do
-    Logger.debug"> leave #{inspect reason}"
+    Logger.debug "> leave #{inspect reason}"
     :ok
   end
 
-  def handle_in("new:msg", msg, socket) do
-    broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"]}
-    {:reply, {:ok, %{msg: msg["body"]}}, assign(socket, :user, msg["user"])}
+  def handle_in(event, msg, socket) do
+    case event do
+      "new:msg" ->
+        broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"]}
+        {:reply, {:ok, %{msg: msg["body"]}}, socket}
+      "authorize" ->
+        Logger.debug "authorize: #{msg["user"]}"
+        send(self, {:after_authorize, msg})
+        {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, assign(socket, :user, msg["user"])}
+    end
   end
 end
