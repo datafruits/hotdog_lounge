@@ -47,8 +47,10 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_in(event, msg, socket) do
+    Logger.debug("handle_in!")
     case event do
       "new:msg" ->
+        Logger.debug "sending new message from #{msg["user"]} : #{msg["body"]}"
         broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"]}
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "authorize" ->
