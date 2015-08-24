@@ -2,6 +2,8 @@ defmodule Chat.RoomChannel do
   use Phoenix.Channel
   require Logger
 
+  @max_nick_length 30
+
   @doc """
   Authorize socket to subscribe and broadcast events on this channel & topic
 
@@ -41,6 +43,11 @@ defmodule Chat.RoomChannel do
     {:noreply, socket}
   end
 
+  def handle_info({:after_fail_authorize, reason}, socket) do
+    push socket, "notauthorized", %{status: "not authorized", error: reason}
+    {:noreply, socket}
+  end
+
   def terminate(reason, _socket) do
     Logger.debug "> leave #{inspect reason}"
     :ok
@@ -55,8 +62,13 @@ defmodule Chat.RoomChannel do
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "authorize" ->
         Logger.debug "authorize: #{msg["user"]}"
-        send(self, {:after_authorize, msg})
-        {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, assign(socket, :user, msg["user"])}
+        if String.length(msg["user"]) > @max_nick_length do
+          send(self, {:after_fail_authorize, "nick too long! :P"})
+          {:noreply, socket}
+        else
+          send(self, {:after_authorize, msg})
+          {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, assign(socket, :user, msg["user"])}
+        end
     end
   end
 end
