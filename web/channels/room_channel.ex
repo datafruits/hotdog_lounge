@@ -31,7 +31,7 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_info(:ping, socket) do
-    push socket, "new:msg", %{user: "SYSTEM", body: "ping"}
+    # push socket, "new:msg", %{user: "SYSTEM", body: "ping"}
     {:noreply, socket}
   end
 
