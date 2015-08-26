@@ -5,9 +5,10 @@ defmodule Chat.Endpoint do
 
 
   # Serve at "/" the given assets from "priv/static" directory
-  plug Plug.Static,
-    at: "/", from: :chat,
-    only: ~w(css images js favicon.ico robots.txt)
+  # don't need this static stuff
+  #plug Plug.Static,
+  #  at: "/", from: :chat,
+  #  only: ~w(css images js favicon.ico robots.txt)
 
   # Code reloading will only work if the :code_reloader key of
   # the :phoenix application is set to true in your config file.
