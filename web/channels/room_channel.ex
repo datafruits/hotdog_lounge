@@ -39,7 +39,7 @@ defmodule Chat.RoomChannel do
 
   def handle_info({:after_authorize, msg}, socket) do
     broadcast! socket, "user:authorized", %{user: msg["user"]}
-    push socket, "authorized", %{status: "authorized"}
+    push socket, "authorized", %{status: "authorized", user: msg["user"]}
     {:noreply, socket}
   end
 
