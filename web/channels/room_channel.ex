@@ -48,8 +48,11 @@ defmodule Chat.RoomChannel do
     {:noreply, socket}
   end
 
-  def terminate(reason, _socket) do
+  def terminate(reason, socket) do
     Logger.debug "> leave #{inspect reason}"
+    Logger.debug "> leave #{inspect socket}"
+    Logger.debug "> leave #{socket.assigns[:user]}"
+    broadcast! socket, "user:left", %{user: socket.assigns[:user]}
     :ok
   end
 
