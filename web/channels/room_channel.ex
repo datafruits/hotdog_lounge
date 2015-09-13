@@ -28,12 +28,7 @@ defmodule Chat.RoomChannel do
 
   def handle_info({:after_join, msg}, socket) do
     broadcast! socket, "user:entered", %{user: msg["user"]}
-    case ChatLog.get_users(socket.topic) do
-      [{_, result}] ->
-        users = result
-      [] ->
-        users = []
-    end
+    users = ChatLog.get_users(socket.topic)
     logs = ChatLog.get_logs(socket.topic)
     Logger.info("users: #{inspect users}")
     Logger.info("logs: #{inspect logs}")
@@ -64,6 +59,7 @@ defmodule Chat.RoomChannel do
     Logger.debug "> leave #{inspect socket}"
     Logger.debug "> leave #{socket.assigns[:user]}"
     broadcast! socket, "user:left", %{user: socket.assigns[:user]}
+    ChatLog.remove_user(socket.topic, socket.assigns[:user])
     :ok
   end
 

@@ -51,7 +51,12 @@ defmodule ChatLog do
     %{ets_table_name: ets_table_name} = state
     case get do
       :get_users ->
-        result = :ets.lookup(ets_table_name, "#{room}:users")
+       case :ets.lookup(ets_table_name, "#{room}:users") do
+        [{_, users}] ->
+          result = users
+        [] ->
+          result = []
+       end
       :get_logs ->
         result = :ets.lookup(ets_table_name, room)
     end
@@ -101,7 +106,10 @@ defmodule ChatLog do
   end
 
   defp remove_user(channel, user, ets_table_name) do
-
+    [{_, users}] = :ets.lookup(ets_table_name, "#{channel}:users")
+    users = List.delete(users, user)
+    true = :ets.insert(ets_table_name, {"#{channel}:users", users})
+    {:ok, user}
   end
 
   def log_message(channel, message) do
