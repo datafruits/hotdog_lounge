@@ -22,9 +22,9 @@ defmodule Chat.Mixfile do
   #
   # Type `mix help deps` for examples and options
   defp deps do
-    [{:phoenix, "~> 0.16"},
-     {:phoenix_html, "~> 2.1"},
-     {:phoenix_live_reload, "~> 0.5"},
+    [{:phoenix, "~> 1.1.2"},
+     {:phoenix_html, "~> 2.4"},
+     {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:phoenix_ecto, "~> 0.9"},
      {:postgrex, ">= 0.0.0"},
      {:cowboy, "~> 1.0"}]
