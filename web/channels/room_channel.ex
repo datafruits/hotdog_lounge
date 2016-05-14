@@ -67,9 +67,9 @@ defmodule Chat.RoomChannel do
     Logger.debug("handle_in!")
     case event do
       "new:msg" ->
-        Logger.debug "sending new message from #{msg["user"]} : #{msg["body"]}"
-        broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"]}
-        ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"]})
+        Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
+        broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+        ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "authorize" ->
         Logger.debug "authorize: #{msg["user"]}"
