@@ -1,6 +1,6 @@
 # Hotdog Lounge
 
-[![Build Status](https://img.shields.io/travis/mcfiredrill/forttree.svg?style=flat)](http://travis-ci.org/datafruits/hotdog_lounge)
+[![Build Status](https://img.shields.io/travis/datafruits/hotdog_lounge.svg?style=flat)](http://travis-ci.org/datafruits/hotdog_lounge)
 
 datafruits.fm chat server, simply some modifications to
 https://github.com/chrismccord/phoenix_chat_example
