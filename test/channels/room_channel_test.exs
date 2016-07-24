@@ -26,7 +26,11 @@ defmodule Chat.RoomChannelTest do
     assert_reply ref, :ok, %{msg: body}
   end
 
-  #test "authorization fails if nick is too long"
+  test "authorization fails if nick is too long", %{socket: socket} do
+    message = %{"user" => "ooooooooooooooooooooooooooooooo"}
+    push socket, "authorize", message
+    assert_push "notauthorized", %{status: "not authorized", error: "nick too long! :P"}
+  end
 
   #test "authorization fails if nick is taken"
 
