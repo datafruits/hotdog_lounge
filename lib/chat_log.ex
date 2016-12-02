@@ -17,6 +17,10 @@ defmodule ChatLog do
     GenServer.call(:chat_log, {:get_users, room})
   end
 
+  def is_user_blocked(room, user) do
+    GenServer.call(:chat_log, {:is_user_blocked, room})
+  end
+
   def stop(server) do
     GenServer.call(server, :stop)
   end
@@ -43,6 +47,15 @@ defmodule ChatLog do
         result = log_message(room, message, ets_table_name)
       :remove_user ->
         result = remove_user(room, message, ets_table_name)
+      :block_user ->
+        result = block_user(room, message, ets_table_name)
+      :is_user_blocked ->
+        case :ets.lookup(ets_table_name, "#{room}:blocked_users") do
+        [{_, block_users}] ->
+          result = Enum.member? block_users, message
+        [] ->
+          result = []
+       end
     end
     {:reply, result, state}
   end
@@ -91,6 +104,10 @@ defmodule ChatLog do
     GenServer.call(:chat_log, {:remove_user, channel, user})
   end
 
+  def block_user(channel, user) do
+    GenServer.call(:chat_log, {:block_user, channel, user})
+  end
+
   defp add_user(channel, user, ets_table_name) do
     case :ets.member(ets_table_name, "#{channel}:users") do
       false ->
@@ -106,10 +123,28 @@ defmodule ChatLog do
   end
 
   defp remove_user(channel, user, ets_table_name) do
-    [{_, users}] = :ets.lookup(ets_table_name, "#{channel}:users")
-    users = List.delete(users, user)
-    true = :ets.insert(ets_table_name, {"#{channel}:users", users})
-    {:ok, user}
+    case :ets.lookup(ets_table_name, "#{channel}:users") do
+      [{_, users}] ->
+        users = List.delete(users, user)
+        true = :ets.insert(ets_table_name, {"#{channel}:users", users})
+        {:ok, user}
+      [] ->
+        {:ok, user}
+    end
+  end
+
+  defp block_user(channel, user, ets_table_name) do
+    case :ets.member(ets_table_name, "#{channel}:blocked_users") do
+      false ->
+        Logger.debug "adding first blocked user: #{user}"
+        true = :ets.insert(ets_table_name, {"#{channel}:blocked_users", [user]})
+        {:ok, user}
+      true ->
+         [{_channel, users}]= :ets.lookup(ets_table_name, "#{channel}:blocked_users")
+         Logger.debug "adding another blocked user: #{user}"
+         :ets.insert(ets_table_name, {"#{channel}:blocked_users", [user | users]})
+        {:ok, user}
+    end
   end
 
   def log_message(channel, message) do

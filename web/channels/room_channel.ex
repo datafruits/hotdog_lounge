@@ -72,7 +72,7 @@ defmodule Chat.RoomChannel do
         ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "authorize" ->
-        Logger.debug "authorize: #{msg["user"]}"
+        Logger.debug "#{msg["timestamp"]} -- authorize: #{msg["user"]}"
         if String.length(msg["user"]) > @max_nick_length do
           send(self, {:after_fail_authorize, "nick too long! :P"})
           {:noreply, socket}
