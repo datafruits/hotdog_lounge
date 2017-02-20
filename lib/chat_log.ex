@@ -36,29 +36,29 @@ defmodule ChatLog do
 
   def handle_call({log, room, message}, _from, state) do
     %{ets_table_name: ets_table_name} = state
-    case log do
+    result = case log do
       :add_user ->
-        result = add_user(room, message, ets_table_name)
+        add_user(room, message, ets_table_name)
       :log_message ->
-        result = log_message(room, message, ets_table_name)
+        log_message(room, message, ets_table_name)
       :remove_user ->
-        result = remove_user(room, message, ets_table_name)
+        remove_user(room, message, ets_table_name)
     end
     {:reply, result, state}
   end
 
   def handle_call({get, room}, _from, state) do
     %{ets_table_name: ets_table_name} = state
-    case get do
+    result = case get do
       :get_users ->
        case :ets.lookup(ets_table_name, "#{room}:users") do
         [{_, users}] ->
-          result = users
+          users
         [] ->
-          result = []
+          []
        end
       :get_logs ->
-        result = :ets.lookup(ets_table_name, room)
+        :ets.lookup(ets_table_name, room)
     end
     {:reply, result, state}
   end
