@@ -3,8 +3,9 @@ defmodule ChatLog do
   require Logger
 
   def start_link(opts \\ []) do
+    {:ok, client} = Exredis.start_link
     {:ok, _pid} = GenServer.start_link(ChatLog, [
-      {:ets_table_name, :chat_log_table},
+      {:redis_client, client},
       {:log_limit, 100}
     ], opts)
   end
@@ -22,12 +23,9 @@ defmodule ChatLog do
   end
 
   def init(args) do
+    [{:redis_client, redis_client}, {:log_limit, log_limit}] = args
 
-    [{:ets_table_name, ets_table_name}, {:log_limit, log_limit}] = args
-
-    :ets.new(ets_table_name, [:named_table, :set, :private])
-
-    {:ok, %{log_limit: log_limit, ets_table_name: ets_table_name}}
+    {:ok, %{log_limit: log_limit, redis_client: redis_client}}
   end
 
   def handle_call(:stop, _from, state) do
@@ -35,30 +33,25 @@ defmodule ChatLog do
   end
 
   def handle_call({log, room, message}, _from, state) do
-    %{ets_table_name: ets_table_name} = state
+    %{redis_client: redis_client} = state
     result = case log do
       :add_user ->
-        add_user(room, message, ets_table_name)
+        add_user(room, message, redis_client)
       :log_message ->
-        log_message(room, message, ets_table_name)
+        log_message(room, message, redis_client)
       :remove_user ->
-        remove_user(room, message, ets_table_name)
+        remove_user(room, message, redis_client)
     end
     {:reply, result, state}
   end
 
   def handle_call({get, room}, _from, state) do
-    %{ets_table_name: ets_table_name} = state
+    %{redis_client: redis_client} = state
     result = case get do
       :get_users ->
-       case :ets.lookup(ets_table_name, "#{room}:users") do
-        [{_, users}] ->
-          users
-        [] ->
-          []
-       end
+       redis_client |> Exredis.query(["LRANGE", "#{room}:users", "0", "-1"])
       :get_logs ->
-        :ets.lookup(ets_table_name, room)
+       redis_client |> Exredis.query(["LRANGE", room, "0", "-1"])
     end
     {:reply, result, state}
   end
@@ -91,24 +84,14 @@ defmodule ChatLog do
     GenServer.call(:chat_log, {:remove_user, channel, user})
   end
 
-  defp add_user(channel, user, ets_table_name) do
-    case :ets.member(ets_table_name, "#{channel}:users") do
-      false ->
-        Logger.debug "adding first user: #{user}"
-        true = :ets.insert(ets_table_name, {"#{channel}:users", [user]})
-        {:ok, user}
-      true ->
-         [{_channel, users}]= :ets.lookup(ets_table_name, "#{channel}:users")
-         Logger.debug "adding another user: #{user}"
-         :ets.insert(ets_table_name, {"#{channel}:users", [user | users]})
-        {:ok, user}
-    end
+  defp add_user(channel, user, redis_client) do
+    Logger.debug "adding user: #{user}"
+    redis_client |> Exredis.query(["RPUSH", "#{channel}:users", user])
+    {:ok, user}
   end
 
-  defp remove_user(channel, user, ets_table_name) do
-    [{_, users}] = :ets.lookup(ets_table_name, "#{channel}:users")
-    users = List.delete(users, user)
-    true = :ets.insert(ets_table_name, {"#{channel}:users", users})
+  defp remove_user(channel, user, redis_client) do
+    redis_client |> Exredis.query(["LREM", "#{channel}:users", 1, user])
     {:ok, user}
   end
 
@@ -116,15 +99,8 @@ defmodule ChatLog do
     GenServer.call(:chat_log, {:log_message, channel, message})
   end
 
-  defp log_message(channel, message, ets_table_name) do
-    case :ets.member(ets_table_name, channel) do
-      false ->
-        true = :ets.insert(ets_table_name, {channel, [message]})
-        {:ok, message}
-      true ->
-         [{_channel, messages}]= :ets.lookup(ets_table_name, channel)
-         :ets.insert(ets_table_name, {channel, [message | messages]})
-        {:ok, message}
-    end
+  defp log_message(channel, message, redis_client) do
+    redis_client |> Exredis.query(["RPUSH", channel, message])
+    {:ok, message}
   end
 end

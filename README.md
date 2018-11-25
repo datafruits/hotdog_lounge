@@ -9,7 +9,7 @@ https://github.com/chrismccord/phoenix_chat_example
 
 1. Clone this repo, then cd to the new directory
 2. Install dependencies with `mix deps.get`
-3. Start server with `mix phoenix.server`
+3. Start server with `mix phx.server`
 
 To connect to the local server from the datafruits app, set the environment variable `CHAT_SOCKET_URL` to `ws://localhost:4000/socket`, in the .env file in the datafruits app.
 
