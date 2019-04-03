@@ -1,8 +1,10 @@
 defmodule Chat.Endpoint do
   use Phoenix.Endpoint, otp_app: :chat
 
-  socket "/socket", Chat.UserSocket
-
+  socket "/socket", Chat.UserSocket,
+    websocket: true,
+    longpoll: true,
+    check_origin: ["//datafruitstest.s3-website-us-east-1.amazonaws.com/", "//localhost:4200", "//localhost:3000", "//datafruits.fm", "//datafruits-fastboot.herokuapp.com/", "//www.datafruits.fm"]
 
   # Serve at "/" the given assets from "priv/static" directory
   # don't need this static stuff
@@ -24,7 +26,7 @@ defmodule Chat.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    json_decoder: Poison
+    json_decoder: Phoenix.json_library()
 
   plug Plug.MethodOverride
   plug Plug.Head
