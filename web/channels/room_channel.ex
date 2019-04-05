@@ -1,5 +1,6 @@
 defmodule Chat.RoomChannel do
   use Phoenix.Channel
+  alias Chat.Presence
   require Logger
 
   @max_nick_length 30
@@ -44,8 +45,12 @@ defmodule Chat.RoomChannel do
   def handle_info({:after_authorize, msg}, socket) do
     broadcast! socket, "user:authorized", %{user: msg["user"]}
     Logger.debug "adding user: #{msg["user"]}"
-    ChatLog.add_user(socket.topic, msg["user"])
+    #ChatLog.add_user(socket.topic, msg["user"])
     push socket, "authorized", %{status: "authorized", user: msg["user"]}
+    push(socket, "presence_state", Presence.list(socket))
+    {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
+      online_at: inspect(System.system_time(:second))
+    })
     {:noreply, socket}
   end
 
