@@ -34,6 +34,7 @@ defmodule Chat.RoomChannel do
     Logger.info("users: #{inspect users}")
     Logger.info("logs: #{inspect logs}")
     push socket, "join", %{status: "connected", users: users}
+    push socket, "presence_state", Presence.list(socket)
     {:noreply, socket}
   end
 
@@ -47,7 +48,6 @@ defmodule Chat.RoomChannel do
     Logger.debug "adding user: #{msg["user"]}"
     #ChatLog.add_user(socket.topic, msg["user"])
     push socket, "authorized", %{status: "authorized", user: msg["user"]}
-    push(socket, "presence_state", Presence.list(socket))
     {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
       online_at: inspect(System.system_time(:second))
     })
