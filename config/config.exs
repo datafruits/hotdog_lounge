@@ -12,7 +12,8 @@ config :chat, Chat.Endpoint,
   secret_key_base: "/RjKJmMO6raXPRTq63qTqid1x6lVKTOP+FTxZHfX6Ogd+1xYmH6eZZFhBu1CIwtg",
   debug_errors: false,
   pubsub: [name: Chat.PubSub,
-           adapter: Phoenix.PubSub.PG2]
+           adapter: Phoenix.PubSub.PG2],
+  check_origin: ["//datafruitstest.s3-website-us-east-1.amazonaws.com/", "//localhost:4200", "//localhost:3000", "//datafruits.fm", "//datafruits-fastboot.herokuapp.com/", "//www.datafruits.fm", "https://datafruits.fm", "https://www.datafruits.fm"]
 
 # Configures Elixir's Logger
 config :logger, :console,

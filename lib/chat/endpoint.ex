@@ -3,8 +3,7 @@ defmodule Chat.Endpoint do
 
   socket "/socket", Chat.UserSocket,
     websocket: true,
-    longpoll: true,
-    check_origin: ["//datafruitstest.s3-website-us-east-1.amazonaws.com/", "//localhost:4200", "//localhost:3000", "//datafruits.fm", "//datafruits-fastboot.herokuapp.com/", "//www.datafruits.fm", "https://datafruits.fm", "https://www.datafruits.fm"]
+    longpoll: true
 
   # Serve at "/" the given assets from "priv/static" directory
   # don't need this static stuff
