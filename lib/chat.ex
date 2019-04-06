@@ -13,7 +13,8 @@ defmodule Chat do
       worker(Chat.Repo, []),
       # Here you could define other workers and supervisors as children
       # worker(Chat.Worker, [arg1, arg2, arg3]),
-      worker(ChatLog, [[name: :chat_log]])
+      worker(ChatLog, [[name: :chat_log]]),
+      Chat.Presence
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

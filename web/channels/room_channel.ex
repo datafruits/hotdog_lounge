@@ -1,5 +1,6 @@
 defmodule Chat.RoomChannel do
   use Phoenix.Channel
+  alias Chat.Presence
   require Logger
 
   @max_nick_length 30
@@ -28,11 +29,10 @@ defmodule Chat.RoomChannel do
 
   def handle_info({:after_join, msg}, socket) do
     broadcast! socket, "user:entered", %{user: msg["user"]}
-    users = ChatLog.get_users(socket.topic)
     logs = ChatLog.get_logs(socket.topic)
-    Logger.info("users: #{inspect users}")
     Logger.info("logs: #{inspect logs}")
-    push socket, "join", %{status: "connected", users: users}
+    push socket, "join", %{status: "connected"}
+    push socket, "presence_state", Presence.list(socket)
     {:noreply, socket}
   end
 
@@ -44,8 +44,10 @@ defmodule Chat.RoomChannel do
   def handle_info({:after_authorize, msg}, socket) do
     broadcast! socket, "user:authorized", %{user: msg["user"]}
     Logger.debug "adding user: #{msg["user"]}"
-    ChatLog.add_user(socket.topic, msg["user"])
     push socket, "authorized", %{status: "authorized", user: msg["user"]}
+    {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
+      online_at: inspect(System.system_time(:second))
+    })
     {:noreply, socket}
   end
 
@@ -59,7 +61,6 @@ defmodule Chat.RoomChannel do
     Logger.debug "> leave #{inspect socket}"
     Logger.debug "> leave #{socket.assigns[:user]}"
     broadcast! socket, "user:left", %{user: socket.assigns[:user]}
-    ChatLog.remove_user(socket.topic, socket.assigns[:user])
     :ok
   end
 
