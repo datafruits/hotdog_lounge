@@ -14,10 +14,6 @@ defmodule ChatLog do
     GenServer.call(:chat_log, {:get_logs, room})
   end
 
-  def get_users(room) do
-    GenServer.call(:chat_log, {:get_users, room})
-  end
-
   def stop(server) do
     GenServer.call(server, :stop)
   end
@@ -35,12 +31,8 @@ defmodule ChatLog do
   def handle_call({log, room, message}, _from, state) do
     %{redis_client: redis_client} = state
     result = case log do
-      :add_user ->
-        add_user(room, message, redis_client)
       :log_message ->
         log_message(room, message, redis_client)
-      :remove_user ->
-        remove_user(room, message, redis_client)
     end
     {:reply, result, state}
   end
@@ -48,8 +40,6 @@ defmodule ChatLog do
   def handle_call({get, room}, _from, state) do
     %{redis_client: redis_client} = state
     result = case get do
-      :get_users ->
-       redis_client |> Exredis.query(["LRANGE", "#{room}:users", "0", "-1"])
       :get_logs ->
        redis_client |> Exredis.query(["LRANGE", room, "0", "-1"])
     end
@@ -74,25 +64,6 @@ defmodule ChatLog do
 
   def code_change(_old_version, state, _extra) do
     {:ok, state}
-  end
-
-  def add_user(channel, user) do
-    GenServer.call(:chat_log, {:add_user, channel, user})
-  end
-
-  def remove_user(channel, user) do
-    GenServer.call(:chat_log, {:remove_user, channel, user})
-  end
-
-  defp add_user(channel, user, redis_client) do
-    Logger.debug "adding user: #{user}"
-    redis_client |> Exredis.query(["RPUSH", "#{channel}:users", user])
-    {:ok, user}
-  end
-
-  defp remove_user(channel, user, redis_client) do
-    redis_client |> Exredis.query(["LREM", "#{channel}:users", 1, user])
-    {:ok, user}
   end
 
   def log_message(channel, message) do
