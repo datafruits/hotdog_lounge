@@ -69,9 +69,18 @@ defmodule Chat.RoomChannel do
     case event do
       "new:msg" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
-        broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
-        ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
-        {:reply, {:ok, %{msg: msg["body"]}}, socket}
+        # check token
+        case JsonWebToken.verify(msg["token"], %{key: System.get_env("JWT_SECRET")}) do
+          {:ok, %{username: claimed_username}} ->
+            if claimed_username == msg["user"] do
+              broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+              ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
+              {:reply, {:ok, %{msg: msg["body"]}}, socket}
+            end
+          {:error, _} ->
+            send(self, {:after_fail_authorize, "bad token"})
+            {:noreply, socket}
+        end
       "authorize" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"], msg["token"]) do
