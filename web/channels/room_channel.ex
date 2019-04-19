@@ -74,19 +74,29 @@ defmodule Chat.RoomChannel do
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "authorize" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
-        # check token here?
-        if JsonWebToken.verify(msg["token"], %{key: System.get_env("JWT_SECRET")}) do
-          if String.length(msg["user"]) > @max_nick_length do
-            send(self, {:after_fail_authorize, "nick too long! :P"})
-            {:noreply, socket}
-          else
+        case authorize(msg["user"], msg["token"]) do
+          {:ok} ->
             send(self, {:after_authorize, msg})
             {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, assign(socket, :user, msg["user"])}
-          end
-        else
-            send(self, {:after_fail_authorize, "bad token"})
+          {:error, reason} ->
+            send(self, {:after_fail_authorize, reason})
             {:noreply, socket}
         end
+    end
+  end
+
+  defp authorize(username, token) do
+    case JsonWebToken.verify(token, %{key: System.get_env("JWT_SECRET")})  do
+      {:ok, %{username: claimed_username}} ->
+        if claimed_username == username do
+          if String.length(username) > @max_nick_length do
+            {:error, "nick too long! :P"}
+          else
+            {:ok}
+          end
+        end
+      {:error, _} ->
+        {:error, "bad token >:| what is wrong with you"}
     end
   end
 end
