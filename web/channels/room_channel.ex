@@ -28,6 +28,7 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_info({:after_join, msg}, socket) do
+    Logger.debug("handle_info: #{Socket}")
     broadcast! socket, "user:entered", %{user: msg["user"]}
     logs = ChatLog.get_logs(socket.topic)
     Logger.info("logs: #{inspect logs}")
@@ -65,7 +66,6 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_in(event, msg, socket) do
-    Logger.debug("handle_in!")
     case event do
       "new:msg" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
