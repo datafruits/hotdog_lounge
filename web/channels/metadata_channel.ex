@@ -3,11 +3,11 @@ defmodule Chat.MetadataChannel do
   require Logger
 
   def join("metadata", message, socket) do
-    {:ok, pubsub} = Redix.PubSub.start_link()
+    {:ok, pubsub} = Redix.PubSub.start_link(password: System.get_env("REDIS_PASSWORD"))
 
-    Redix.PubSub.subscribe(pubsub, "metadata", self())
+    Redix.PubSub.subscribe(pubsub, "datafruits:metadata", self())
 
-    {:ok, conn} = Redix.start_link()
+    {:ok, conn} = Redix.start_link(password: System.get_env("REDIS_PASSWORD"))
     {:ok, message} = Redix.command(conn, ["GET", "datafruits:metadata"])
 
     send(self, {:after_join, message})
