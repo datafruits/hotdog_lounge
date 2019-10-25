@@ -3,6 +3,7 @@ defmodule Chat.UserSocket do
 
   channel "rooms:*", Chat.RoomChannel
   channel "metadata", Chat.MetadataChannel
+  channel "vj", Chat.VjChannel
 
   def connect(_params, socket) do
     {:ok, socket}
