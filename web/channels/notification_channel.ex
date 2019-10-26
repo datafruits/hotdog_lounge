@@ -29,7 +29,7 @@ defmodule Chat.NotificationChannel do
 
     # Push the message back to the user over the channel topic
     # This assumes the message is already in a map
-    broadcast! socket, "notifications", %{message: message}
+    broadcast! socket, "notification", %{message: message}
 
     {:noreply, socket}
   end
