@@ -13,7 +13,6 @@ defmodule Chat.NotificationChannel do
   end
 
   def handle_info({:after_join, message}, socket) do
-    push socket, "notification", %{message: message}
     {:noreply, socket}
   end
 
