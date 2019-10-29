@@ -24,11 +24,8 @@ defmodule Chat.NotificationChannel do
   # Handle the message coming from the Redis PubSub channel
   def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
     Logger.debug "got message from pubsub #{message} on #{channel}"
-    # do something with the message
 
-    # Push the message back to the user over the channel topic
-    # This assumes the message is already in a map
-    broadcast! socket, "notification", %{message: message}
+    push socket, "notification", %{message: message}
 
     {:noreply, socket}
   end
