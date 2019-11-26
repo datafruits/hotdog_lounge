@@ -2,7 +2,7 @@ defmodule Chat.VjChannel do
   use Phoenix.Channel
   require Logger
 
-  def join("metadata", message, socket) do
+  def join("vj", _message, socket) do
     {:ok, pubsub} = Redix.PubSub.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
 
     Redix.PubSub.subscribe(pubsub, "datafruits:vj", self())
@@ -29,11 +29,8 @@ defmodule Chat.VjChannel do
   # Handle the message coming from the Redis PubSub channel
   def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
     Logger.debug "got message from pubsub #{message} on #{channel}"
-    # do something with the message
 
-    # Push the message back to the user over the channel topic
-    # This assumes the message is already in a map
-    broadcast! socket, "vj", %{vj_connected: vj_connected}
+    push socket, "vj", %{message: message}
 
     {:noreply, socket}
   end
