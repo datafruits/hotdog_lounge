@@ -2,8 +2,8 @@ defmodule Chat.Endpoint do
   use Phoenix.Endpoint, otp_app: :chat
 
   socket "/socket", Chat.UserSocket,
-    websocket: true,
-    longpoll: true
+    websocket: [connect_info: [:peer_data, :x_headers]],
+    longpoll: [connect_info: [:peer_data, :x_headers]]
 
   # Serve at "/" the given assets from "priv/static" directory
   # don't need this static stuff
