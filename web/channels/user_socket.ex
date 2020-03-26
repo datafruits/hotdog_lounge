@@ -11,12 +11,16 @@ defmodule Chat.UserSocket do
     remote_ip = Enum.join(Tuple.to_list(connect_info.peer_data.address), ".")
     Logger.debug "remote ip: #{remote_ip}"
     # need to store IP somewhere?
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, message} = Redix.command(conn, ["RPUSH", "datafruits:chat:ips", remote_ip])
+    {:ok, banned_ips} = Redix.command(conn, ["LRANGE", "datafruits:chat:ips:banned", 0, -1])
     #
     # dont return OK if banned...
-    # if remote_ip in banned_list
-    # { :banned, socket }
-    # end
-    {:ok, assign(socket, :remote_ip, remote_ip)}
+    if Enum.member?(banned_ips, remote_ip) do
+      { :banned, socket }
+    else
+      {:ok, assign(socket, :remote_ip, remote_ip)}
+    end
   end
 
   def id(socket) do
