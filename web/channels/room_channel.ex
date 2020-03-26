@@ -20,7 +20,31 @@ defmodule Chat.RoomChannel do
     :timer.send_interval(5000, :ping)
     send(self, {:after_join, message})
 
+    {:ok, pubsub} = Redix.PubSub.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+
+    Redix.PubSub.subscribe(pubsub, "datafruits:bans", self())
+
     {:ok, socket}
+  end
+
+  # Avoid throwing an error when a subscribed message enters the channel
+  def handle_info({:redix_pubsub, _redix_pid, _ref, :subscribed, _}, socket) do
+    {:noreply, socket}
+  end
+
+  # Handle the message coming from the Redis PubSub channel
+  def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
+    Logger.debug "got message from pubsub #{message} on #{channel}"
+
+    # disconnect banned user
+    broadcast message, "disconnect", %{}
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, _message} = Redix.command(conn, ["RPUSH", "datafruits:chat:ips:banned", message])
+
+    # broadcast that user was banned
+    #broadcast! socket, "banned", %{user: user}
+
+    {:noreply, socket}
   end
 
   def join("rooms:" <> _private_subtopic, _message, _socket) do
@@ -49,6 +73,8 @@ defmodule Chat.RoomChannel do
     {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
       online_at: inspect(System.system_time(:second))
     })
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, message} = Redix.command(conn, ["RPUSH", "datafruits:chat:sockets", socket.id])
     {:noreply, socket}
   end
 
@@ -81,6 +107,10 @@ defmodule Chat.RoomChannel do
           send(self, {:after_authorize, msg})
           {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, assign(socket, :user, msg["user"])}
         end
+      "ban" ->
+        broadcast! socket, "banned", %{user: msg["user"], timestamp: msg["timestamp"]}
+        {:noreply, socket}
+
     end
   end
 end
