@@ -7,12 +7,9 @@ defmodule Chat.UserSocket do
   channel "notifications", Chat.NotificationChannel
 
   def connect(_params, socket, connect_info) do
-    # remote_ip = connect_info.peer_data.address
     remote_ip = Enum.join(Tuple.to_list(connect_info.peer_data.address), ".")
     Logger.debug "remote ip: #{remote_ip}"
-    # need to store IP somewhere?
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-    {:ok, message} = Redix.command(conn, ["RPUSH", "datafruits:chat:ips", remote_ip])
     {:ok, banned_ips} = Redix.command(conn, ["LRANGE", "datafruits:chat:ips:banned", 0, -1])
     #
     # dont return OK if banned...
