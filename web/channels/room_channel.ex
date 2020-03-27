@@ -22,7 +22,7 @@ defmodule Chat.RoomChannel do
 
     {:ok, pubsub} = Redix.PubSub.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
 
-    Redix.PubSub.subscribe(pubsub, "datafruits:bans", self())
+    Redix.PubSub.subscribe(pubsub, "datafruits:chat:bans", self())
 
     {:ok, socket}
   end
@@ -36,13 +36,16 @@ defmodule Chat.RoomChannel do
   def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
     Logger.debug "got message from pubsub #{message} on #{channel}"
 
+    remote_ip = List.last(String.split(message, ":"))
+    Logger.debug "banning this IP: #{remote_ip}"
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, _message} = Redix.command(conn, ["RPUSH", "datafruits:chat:ips:banned", remote_ip])
+
     # disconnect banned user
     broadcast message, "disconnect", %{}
-    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-    {:ok, _message} = Redix.command(conn, ["RPUSH", "datafruits:chat:ips:banned", message])
 
-    # broadcast that user was banned
-    #broadcast! socket, "banned", %{user: user}
+    # TODO broadcast that user was banned
+    #broadcast! socket, "user:banned", %{user: assigns[:user]}
 
     {:noreply, socket}
   end
