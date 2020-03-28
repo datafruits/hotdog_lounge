@@ -30,8 +30,8 @@ defmodule Chat.RoomChannel do
   def handle_info({:after_join, msg}, socket) do
     Logger.debug("handle_info: #{Socket}")
     broadcast! socket, "user:entered", %{user: msg["user"]}
-    logs = ChatLog.get_logs(socket.topic)
-    Logger.info("logs: #{inspect logs}")
+    #logs = ChatLog.get_logs(socket.topic)
+    #Logger.info("logs: #{inspect logs}")
     push socket, "join", %{status: "connected"}
     push socket, "presence_state", Presence.list(socket)
     {:noreply, socket}
@@ -70,7 +70,7 @@ defmodule Chat.RoomChannel do
       "new:msg" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
         broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
-        ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
+        #ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "authorize" ->
         Logger.debug "authorize: #{msg["user"]}"
