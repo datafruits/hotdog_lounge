@@ -41,7 +41,7 @@ defmodule Chat.RoomChannel do
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
     {:ok, _message} = Redix.command(conn, ["SADD", "datafruits:chat:ips:banned", remote_ip])
 
-    push socket, "disconnect", %{}
+    push message, "disconnect", %{}
     # disconnect banned user
     broadcast message, "disconnect", %{}
 
