@@ -42,7 +42,7 @@ defmodule Chat.RoomChannel do
     {:ok, _message} = Redix.command(conn, ["SADD", "datafruits:chat:ips:banned", remote_ip])
 
     Logger.debug "broadcasting diconnect"
-    broadcast "user_socket:" <> remote_ip, "disconnect", %{}
+    Chat.Endpoint.broadcast "user_socket:" <> remote_ip, "disconnect", %{}
     Logger.debug "done"
 
     {:noreply, socket}
