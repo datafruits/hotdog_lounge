@@ -42,8 +42,6 @@ defmodule Chat.RoomChannel do
     {:ok, _message} = Redix.command(conn, ["SADD", "datafruits:chat:ips:banned", remote_ip])
 
     push message, "disconnect", %{}
-    # disconnect banned user
-    broadcast message, "disconnect", %{}
 
     # TODO broadcast that user was banned
     #broadcast! socket, "user:banned", %{user: assigns[:user]}
