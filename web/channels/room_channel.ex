@@ -36,12 +36,12 @@ defmodule Chat.RoomChannel do
   def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
     Logger.debug "got message from pubsub #{message} on #{channel}"
 
-    remote_ip = List.last(String.split(message, ":"))
+    remote_ip = Enum.at(String.split(message, ":"), 1)
     Logger.debug "banning this IP: #{remote_ip}"
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
     {:ok, _message} = Redix.command(conn, ["SADD", "datafruits:chat:ips:banned", remote_ip])
-    {:ok, _message} = Redix.command(conn, ["SREM", "datafruits:chat:sockets", message])
 
+    push socket, "disconnect", %{}
     # disconnect banned user
     broadcast message, "disconnect", %{}
 
@@ -78,7 +78,7 @@ defmodule Chat.RoomChannel do
       online_at: inspect(System.system_time(:second))
     })
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-    {:ok, message} = Redix.command(conn, ["SADD", "datafruits:chat:sockets", socket.id])
+    {:ok, message} = Redix.command(conn, ["SADD", "datafruits:chat:sockets", "#{socket.id}:#{msg["user"]}"])
     {:noreply, socket}
   end
 
@@ -92,6 +92,8 @@ defmodule Chat.RoomChannel do
     Logger.info "> leave #{inspect socket}"
     Logger.info "> leave #{socket.assigns[:user]}"
     broadcast! socket, "user:left", %{user: socket.assigns[:user]}
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, message} = Redix.command(conn, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
     :ok
   end
 
