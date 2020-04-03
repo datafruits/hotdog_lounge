@@ -7,7 +7,6 @@ defmodule Chat.UserSocket do
   channel "notifications", Chat.NotificationChannel
 
   def connect(_params, socket, connect_info) do
-    Logger.debug "headers: #{connect_info.x_headers}"
     env = Application.get_env(:chat, :env)
 
     remote_ip = case env do
