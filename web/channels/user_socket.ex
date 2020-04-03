@@ -9,6 +9,7 @@ defmodule Chat.UserSocket do
   def connect(_params, socket, connect_info) do
     env = Application.get_env(:chat, :env)
 
+    Logger.info("env: #{env}")
     remote_ip = case env do
       # currently prod is running on heroku behind proxies, so we must look at the
       # x-forwarded-for header to get the correct ip
