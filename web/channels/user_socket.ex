@@ -7,6 +7,7 @@ defmodule Chat.UserSocket do
   channel "notifications", Chat.NotificationChannel
 
   def connect(_params, socket, connect_info) do
+    Logger.debug "headers: #{connect_info.x_headers}"
     remote_ip = Enum.join(Tuple.to_list(connect_info.peer_data.address), ".")
     Logger.debug "remote ip: #{remote_ip}"
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
