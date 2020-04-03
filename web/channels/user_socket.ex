@@ -8,7 +8,15 @@ defmodule Chat.UserSocket do
 
   def connect(_params, socket, connect_info) do
     Logger.debug "headers: #{connect_info.x_headers}"
-    remote_ip = Enum.join(Tuple.to_list(connect_info.peer_data.address), ".")
+    env = Application.get_env(:your_app, :env)
+
+    remote_ip = case env do
+      # currently prod is running on heroku behind proxies, so we must look at the
+      # x-forwarded-for header to get the correct ip
+      :prod -> ip_from_headers(connect_info.x_headers)
+      # otherwise use the peer_data's address in development and test
+      _ -> ip_from_peer_data(connect_info.peer_data.address)
+    end
     Logger.debug "remote ip: #{remote_ip}"
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
     {:ok, banned_ips} = Redix.command(conn, ["SMEMBERS", "datafruits:chat:ips:banned"])
@@ -24,5 +32,14 @@ defmodule Chat.UserSocket do
   def id(socket) do
     remote_ip = socket.assigns.remote_ip
     "user_socket:#{remote_ip}"
+  end
+
+  defp ip_from_headers headers do
+    { _, remote_ip } = List.keyfind(headers, "x-forwarded-for", 0)
+    remote_ip
+  end
+
+  defp ip_from_peer_data address do
+    Enum.join(Tuple.to_list(address), ".")
   end
 end
