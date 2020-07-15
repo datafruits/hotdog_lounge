@@ -7,6 +7,8 @@ https://github.com/chrismccord/phoenix_chat_example
 
 [Install elixir](https://elixir-lang.org/install.html) if you haven't already.
 
+You should also have a redis server running for the app to connect to.
+
 1. Clone this repo, then cd to the new directory
 2. Install dependencies with `mix deps.get`
 3. Start server with `mix phx.server`

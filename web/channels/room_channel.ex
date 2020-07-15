@@ -20,7 +20,32 @@ defmodule Chat.RoomChannel do
     :timer.send_interval(5000, :ping)
     send(self, {:after_join, message})
 
+    {:ok, pubsub} = Redix.PubSub.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+
+    Redix.PubSub.subscribe(pubsub, "datafruits:chat:bans", self())
+
     {:ok, socket}
+  end
+
+  # Avoid throwing an error when a subscribed message enters the channel
+  def handle_info({:redix_pubsub, _redix_pid, _ref, :subscribed, _}, socket) do
+    {:noreply, socket}
+  end
+
+  # Handle the message coming from the Redis PubSub channel (for chat bans)
+  def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
+    Logger.debug "got message from pubsub #{message} on #{channel}"
+
+    remote_ip = Enum.at(String.split(message, ":"), 1)
+    Logger.debug "banning this IP: #{remote_ip}"
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, _message} = Redix.command(conn, ["SADD", "datafruits:chat:ips:banned", remote_ip])
+
+    Logger.debug "broadcasting diconnect"
+    Chat.Endpoint.broadcast "user_socket:" <> remote_ip, "disconnect", %{}
+    Logger.debug "done"
+
+    {:noreply, socket}
   end
 
   def join("rooms:" <> _private_subtopic, _message, _socket) do
@@ -28,9 +53,10 @@ defmodule Chat.RoomChannel do
   end
 
   def handle_info({:after_join, msg}, socket) do
+    Logger.debug("handle_info: #{Socket}")
     broadcast! socket, "user:entered", %{user: msg["user"]}
-    logs = ChatLog.get_logs(socket.topic)
-    Logger.info("logs: #{inspect logs}")
+    #logs = ChatLog.get_logs(socket.topic)
+    #Logger.info("logs: #{inspect logs}")
     push socket, "join", %{status: "connected"}
     push socket, "presence_state", Presence.list(socket)
     {:noreply, socket}
@@ -48,6 +74,8 @@ defmodule Chat.RoomChannel do
     {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
       online_at: inspect(System.system_time(:second))
     })
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, message} = Redix.command(conn, ["SADD", "datafruits:chat:sockets", "#{socket.id}:#{msg["user"]}"])
     {:noreply, socket}
   end
 
@@ -61,11 +89,12 @@ defmodule Chat.RoomChannel do
     Logger.info "> leave #{inspect socket}"
     Logger.info "> leave #{socket.assigns[:user]}"
     broadcast! socket, "user:left", %{user: socket.assigns[:user]}
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, message} = Redix.command(conn, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
     :ok
   end
 
   def handle_in(event, msg, socket) do
-    Logger.debug("handle_in!")
     case event do
       "new:msg" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
@@ -81,6 +110,9 @@ defmodule Chat.RoomChannel do
             send(self, {:after_fail_authorize, "bad token"})
             {:noreply, socket}
         end
+         # broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+         # #ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
+         # {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "authorize" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"], msg["token"]) do
@@ -106,6 +138,9 @@ defmodule Chat.RoomChannel do
         end
       {:error, _} ->
         {:error, "bad token >:| what is wrong with you"}
+      "ban" ->
+        broadcast! socket, "banned", %{user: msg["user"], timestamp: msg["timestamp"]}
+        {:noreply, socket}
     end
   end
 end
