@@ -70,7 +70,7 @@ defmodule Chat.RoomChannel do
   def handle_info({:after_authorize, msg}, socket) do
     broadcast! socket, "user:authorized", %{user: msg["user"]}
     Logger.debug "adding user: #{msg["user"]}"
-    push socket, "authorized", %{status: "authorized", user: msg["user"]}
+    push socket, "authorized", %{status: "authorized", user: msg["user"], token: msg["token"]}
     {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
       online_at: inspect(System.system_time(:second))
     })
@@ -98,12 +98,13 @@ defmodule Chat.RoomChannel do
     case event do
       "new:msg" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
+        Logger.debug "token: #{msg["token"]}"
         # check token
         case JsonWebToken.verify(msg["token"], %{key: System.get_env("JWT_SECRET")}) do
           {:ok, %{username: claimed_username}} ->
             if claimed_username == msg["user"] do
               broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
-              ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
+              # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
           {:error, _} ->
@@ -118,15 +119,22 @@ defmodule Chat.RoomChannel do
         case authorize(msg["user"], msg["token"]) do
           {:ok} ->
             send(self, {:after_authorize, msg})
-            {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, assign(socket, :user, msg["user"])}
+            socket = socket
+              |> assign(:user, msg["user"])
+              |> assign(:token, msg["token"])
+            {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, socket}
           {:error, reason} ->
             send(self, {:after_fail_authorize, reason})
             {:noreply, socket}
         end
+      "ban" ->
+        broadcast! socket, "banned", %{user: msg["user"], timestamp: msg["timestamp"]}
+        {:noreply, socket}
     end
   end
 
   defp authorize(username, token) do
+    Logger.debug "authorize: #{username}, #{token}"
     case JsonWebToken.verify(token, %{key: System.get_env("JWT_SECRET")})  do
       {:ok, %{username: claimed_username}} ->
         if claimed_username == username do
@@ -138,9 +146,6 @@ defmodule Chat.RoomChannel do
         end
       {:error, _} ->
         {:error, "bad token >:| what is wrong with you"}
-      "ban" ->
-        broadcast! socket, "banned", %{user: msg["user"], timestamp: msg["timestamp"]}
-        {:noreply, socket}
     end
   end
 end
