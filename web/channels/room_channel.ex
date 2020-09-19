@@ -97,6 +97,10 @@ defmodule Chat.RoomChannel do
   def handle_in(event, msg, socket) do
     case event do
       "new:msg" ->
+        broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+        # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
+        {:reply, {:ok, %{msg: msg["body"]}}, socket}
+      "new:msg_with_token" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
         Logger.debug "token: #{msg["token"]}"
         # check token
