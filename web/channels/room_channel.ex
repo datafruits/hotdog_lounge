@@ -114,7 +114,7 @@ defmodule Chat.RoomChannel do
          # broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
          # #ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
          # {:reply, {:ok, %{msg: msg["body"]}}, socket}
-      "authorize" ->
+      "authorize_token" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"], msg["token"]) do
           {:ok} ->
@@ -123,6 +123,18 @@ defmodule Chat.RoomChannel do
               |> assign(:user, msg["user"])
               |> assign(:token, msg["token"])
             {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, socket}
+          {:error, reason} ->
+            send(self, {:after_fail_authorize, reason})
+            {:noreply, socket}
+        end
+      "authorize" ->
+        Logger.debug "authorize_anonymous: #{msg["user"]}, #{msg["token"]}"
+        case authorize(msg["user"]) do
+          {:ok} ->
+            send(self, {:after_authorize, msg})
+            socket = socket
+              |> assign(:user, msg["user"])
+            {:reply, {:ok, %{msg: "#{msg["user"]} authorized anonymously"}}, socket}
           {:error, reason} ->
             send(self, {:after_fail_authorize, reason})
             {:noreply, socket}
@@ -147,5 +159,18 @@ defmodule Chat.RoomChannel do
       {:error, _} ->
         {:error, "bad token >:| what is wrong with you"}
     end
+  end
+
+  defp authorize(username) do
+    Logger.debug "authorize: #{username}"
+    # if nick_taken?
+    #   {:error, "nick taken! :P"}
+    # else
+      if String.length(username) > @max_nick_length do
+        {:error, "nick too long! :P"}
+      else
+        {:ok}
+      end
+    # end
   end
 end
