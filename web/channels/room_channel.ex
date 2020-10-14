@@ -107,7 +107,8 @@ defmodule Chat.RoomChannel do
         case JsonWebToken.verify(msg["token"], %{key: System.get_env("JWT_SECRET")}) do
           {:ok, %{username: claimed_username}} ->
             if claimed_username == msg["user"] do
-              broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+              broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
+                timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"]}
               # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
@@ -146,6 +147,11 @@ defmodule Chat.RoomChannel do
       "ban" ->
         broadcast! socket, "banned", %{user: msg["user"], timestamp: msg["timestamp"]}
         {:noreply, socket}
+      "disconnect" ->
+        broadcast! socket, "user:left", %{user: socket.assigns[:user]}
+        {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+        {:ok, message} = Redix.command(conn, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
+        {:reply, {:ok, %{msg: "#{msg["user"]} disconnected"}}, socket}
     end
   end
 
