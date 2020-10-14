@@ -116,9 +116,6 @@ defmodule Chat.RoomChannel do
             send(self, {:after_fail_authorize, "bad token"})
             {:noreply, socket}
         end
-         # broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
-         # #ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
-         # {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "authorize_token" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"], msg["token"]) do
