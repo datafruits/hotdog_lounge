@@ -37,6 +37,7 @@ defmodule Chat.Mixfile do
      {:exredis, ">= 0.2.4"},
      {:redix, ">= 0.0.0"},
      {:plug_cowboy, "~> 2.0"},
-     {:plug, "~> 1.7"}]
+     {:plug, "~> 1.7"},
+     {:json_web_token, "~> 0.2.5"}]
   end
 end
