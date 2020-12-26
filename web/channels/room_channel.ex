@@ -96,6 +96,10 @@ defmodule Chat.RoomChannel do
 
   def handle_in(event, msg, socket) do
     case event do
+      "new:fruit_tip" ->
+        broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"]}
+        # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
+        {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
         broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
