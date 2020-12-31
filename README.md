@@ -11,7 +11,8 @@ You should also have a redis server running for the app to connect to.
 
 1. Clone this repo, then cd to the new directory
 2. Install dependencies with `mix deps.get`
-3. Start server with `mix phx.server`
+3. Source the environment variables in the .env file with `source .env`
+4. Start server with `mix phx.server`
 
 To connect to the local server from the datafruits app, set the environment variable `CHAT_SOCKET_URL` to `ws://localhost:4000/socket`, in the .env file in the datafruits app.
 
