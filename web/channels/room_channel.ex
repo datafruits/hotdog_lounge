@@ -69,10 +69,12 @@ defmodule Chat.RoomChannel do
 
   def handle_info({:after_authorize, msg}, socket) do
     broadcast! socket, "user:authorized", %{user: msg["user"]}
-    Logger.debug "adding user: #{msg["user"]}"
+    Logger.debug "adding user: #{inspect msg}"
     push socket, "authorized", %{status: "authorized", user: msg["user"], token: msg["token"]}
     {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
-      online_at: inspect(System.system_time(:second))
+      online_at: inspect(System.system_time(:second)),
+      avatarUrl: msg["avatarUrl"],
+      username: msg["user"]
     })
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
     {:ok, message} = Redix.command(conn, ["SADD", "datafruits:chat:sockets", "#{socket.id}:#{msg["user"]}"])
