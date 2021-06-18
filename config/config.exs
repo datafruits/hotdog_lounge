@@ -11,7 +11,7 @@ config :chat, Chat.Endpoint,
   root: Path.expand("..", __DIR__),
   secret_key_base: "/RjKJmMO6raXPRTq63qTqid1x6lVKTOP+FTxZHfX6Ogd+1xYmH6eZZFhBu1CIwtg",
   debug_errors: false,
-  pubsub: [name: Chat.PubSub,
+  pubsub_server: [name: Chat.PubSub,
            adapter: Phoenix.PubSub.PG2],
            check_origin: ["//datafruitstest.s3-website-us-east-1.amazonaws.com/", "//localhost:4200", "//localhost:3000", "//datafruits.fm", "//datafruits-fastboot.herokuapp.com/", "//www.datafruits.fm", "https://datafruits.fm", "https://www.datafruits.fm", "https://datafruits-photobooth.glitch.me", "//*.herokuapp.com"]
 

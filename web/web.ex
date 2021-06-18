@@ -29,7 +29,7 @@ defmodule Chat.Web do
       use Phoenix.Controller
 
       # Alias the data repository as a convenience
-      alias Chat.Repo
+      # alias Chat.Repo
 
       # Import URL helpers from the router
       import Chat.Router.Helpers
