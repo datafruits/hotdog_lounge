@@ -17,7 +17,7 @@ defmodule Chat.Mixfile do
   # Type `mix help compile.app` for more information
   def application do
     [mod: {Chat, []},
-     applications: [:phoenix, :phoenix_html, :cowboy, :logger]]
+     applications: [:phoenix, :phoenix_html, :cowboy, :logger, :exredis]]
   end
 
   # Specifies which paths to compile per environment.
@@ -28,15 +28,17 @@ defmodule Chat.Mixfile do
   #
   # Type `mix help deps` for examples and options
   defp deps do
-    [{:phoenix, "~> 1.4"},
-     {:phoenix_html, "~> 2.4"},
+    [{:phoenix, "~> 1.5"},
+     {:phoenix_pubsub, "~> 2.0"},
+     {:phoenix_html, "~> 2.11"},
      {:phoenix_live_reload, "~> 1.0", only: :dev},
-     {:phoenix_ecto, "~> 2.0"},
-     {:postgrex, "~> 0.11.0"},
+     {:phoenix_ecto, "~> 4.1"},
+     {:ecto_sql, "~> 3.4"},
+     {:postgrex, ">= 0.0.0"},
      {:jason, "~> 1.0"},
      {:exredis, ">= 0.2.4"},
      {:redix, ">= 0.0.0"},
-     {:plug_cowboy, "~> 2.0"},
+     {:plug_cowboy, "~> 2.1"},
      {:plug, "~> 1.7"},
      {:json_web_token, "~> 0.2.5"}]
   end
