@@ -113,7 +113,7 @@ defmodule Chat.RoomChannel do
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
         Logger.debug "token: #{msg["token"]}"
         # check token
-        case JsonWebToken.verify(msg["token"], %{key: System.get_env("JWT_SECRET")}) do
+        case JWT.verify(msg["token"], %{key: System.get_env("JWT_SECRET")}) do
           {:ok, %{username: claimed_username}} ->
             if claimed_username == msg["user"] do
               broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
@@ -163,7 +163,7 @@ defmodule Chat.RoomChannel do
 
   defp authorize(username, token) do
     Logger.debug "authorize: #{username}, #{token}"
-    case JsonWebToken.verify(token, %{key: System.get_env("JWT_SECRET")})  do
+    case JWT.verify(token, %{key: System.get_env("JWT_SECRET")})  do
       {:ok, %{username: claimed_username}} ->
         if claimed_username == username do
           if String.length(username) > @max_nick_length do
