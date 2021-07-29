@@ -29,18 +29,18 @@ defmodule Chat.Web do
       use Phoenix.Controller
 
       # Alias the data repository as a convenience
-      alias Chat.Repo
+      # alias Chat.Repo
 
       # Import URL helpers from the router
       import Chat.Router.Helpers
     end
   end
 
-  def model do
-    quote do
-      use Ecto.Model
-    end
-  end
+  # def model do
+  #   quote do
+  #     use Ecto.Model
+  #   end
+  # end
 
   @doc """
   When used, dispatch to the appropriate controller/view/etc.

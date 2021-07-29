@@ -10,7 +10,7 @@ defmodule Chat do
       # Start the endpoint when the application starts
       supervisor(Chat.Endpoint, []),
       # Start the Ecto repository
-      worker(Chat.Repo, []),
+      # worker(Chat.Repo, []),
       # Here you could define other workers and supervisors as children
       # worker(Chat.Worker, [arg1, arg2, arg3]),
       #worker(ChatLog, [[name: :chat_log]]),
