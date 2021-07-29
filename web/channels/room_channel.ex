@@ -74,6 +74,9 @@ defmodule Chat.RoomChannel do
     {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
       online_at: inspect(System.system_time(:second)),
       avatarUrl: msg["avatarUrl"],
+      role: msg["role"],
+      style: msg["style"],
+      pronouns: msg["pronouns"],
       username: msg["user"]
     })
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
@@ -114,7 +117,7 @@ defmodule Chat.RoomChannel do
           {:ok, %{username: claimed_username}} ->
             if claimed_username == msg["user"] do
               broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
-                timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"]}
+                timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"]}
               # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
