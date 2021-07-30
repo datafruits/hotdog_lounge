@@ -113,8 +113,9 @@ defmodule Chat.RoomChannel do
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
         Logger.debug "token: #{msg["token"]}"
         # check token
-        case JWT.verify(msg["token"], %{key: System.get_env("JWT_SECRET")}) do
-          {:ok, %{username: claimed_username}} ->
+        case Chat.Token.verify_and_validate(msg["token"]) do
+          {:ok, claims} ->
+            claimed_username = claims["username"]
             if claimed_username == msg["user"] do
               broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
                 timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"]}
@@ -163,8 +164,9 @@ defmodule Chat.RoomChannel do
 
   defp authorize(username, token) do
     Logger.debug "authorize: #{username}, #{token}"
-    case JWT.verify(token, %{key: System.get_env("JWT_SECRET")})  do
-      {:ok, %{username: claimed_username}} ->
+    case Chat.Token.verify_and_validate(token) do
+      {:ok, claims} ->
+        claimed_username = claims["username"]
         if claimed_username == username do
           if String.length(username) > @max_nick_length do
             {:error, "nick too long! :P"}
