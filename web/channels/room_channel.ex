@@ -74,6 +74,9 @@ defmodule Chat.RoomChannel do
     {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
       online_at: inspect(System.system_time(:second)),
       avatarUrl: msg["avatarUrl"],
+      role: msg["role"],
+      style: msg["style"],
+      pronouns: msg["pronouns"],
       username: msg["user"]
     })
     {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
@@ -110,11 +113,12 @@ defmodule Chat.RoomChannel do
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
         Logger.debug "token: #{msg["token"]}"
         # check token
-        case JsonWebToken.verify(msg["token"], %{key: System.get_env("JWT_SECRET")}) do
-          {:ok, %{username: claimed_username}} ->
+        case Chat.Token.verify_and_validate(msg["token"]) do
+          {:ok, claims} ->
+            claimed_username = claims["username"]
             if claimed_username == msg["user"] do
               broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
-                timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"]}
+                timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"]}
               # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
@@ -160,8 +164,9 @@ defmodule Chat.RoomChannel do
 
   defp authorize(username, token) do
     Logger.debug "authorize: #{username}, #{token}"
-    case JsonWebToken.verify(token, %{key: System.get_env("JWT_SECRET")})  do
-      {:ok, %{username: claimed_username}} ->
+    case Chat.Token.verify_and_validate(token) do
+      {:ok, claims} ->
+        claimed_username = claims["username"]
         if claimed_username == username do
           if String.length(username) > @max_nick_length do
             {:error, "nick too long! :P"}

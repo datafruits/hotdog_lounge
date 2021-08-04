@@ -31,13 +31,11 @@ defmodule Chat.Mixfile do
     [{:phoenix, "~> 1.4"},
      {:phoenix_html, "~> 2.4"},
      {:phoenix_live_reload, "~> 1.0", only: :dev},
-     {:phoenix_ecto, "~> 2.0"},
-     {:postgrex, "~> 0.11.0"},
      {:jason, "~> 1.0"},
      {:exredis, ">= 0.2.4"},
      {:redix, ">= 0.0.0"},
      {:plug_cowboy, "~> 2.0"},
      {:plug, "~> 1.7"},
-     {:json_web_token, "~> 0.2.5"}]
+     {:joken, "~> 2.0"}]
   end
 end

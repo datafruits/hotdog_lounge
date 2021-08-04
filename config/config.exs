@@ -30,6 +30,8 @@ config :exredis,
   reconnect: :no_reconnect,
   max_queue: :infinity
 
+config :joken, default_signer: System.get_env("JWT_SECRET")
+
 config :phoenix, :json_library, Jason
 
 # Import environment specific config. This must remain at the bottom
