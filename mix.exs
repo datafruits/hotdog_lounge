@@ -36,7 +36,6 @@ defmodule Chat.Mixfile do
      {:redix, ">= 0.0.0"},
      {:plug_cowboy, "~> 2.0"},
      {:plug, "~> 1.7"},
-     # {:yajwt, "~> 1.0"}
       {:joken, "~> 2.0"}]
   end
 end
