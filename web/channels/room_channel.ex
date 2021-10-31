@@ -102,7 +102,12 @@ defmodule Chat.RoomChannel do
   def handle_in(event, msg, socket) do
     case event do
       "new:fruit_tip" ->
-        broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"]}
+        # count in redis
+        {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+        {:ok, total_count} = Redix.command(conn, ["INCR", "datafruits:fruits:total"])
+        {:ok, count} = Redix.command(conn, ["INCR", "datafruits:fruits:#{msg["fruit"]}"])
+        Logger.info "fruit count: #{count}"
+        broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
