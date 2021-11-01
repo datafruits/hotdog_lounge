@@ -15,7 +15,7 @@ defmodule Chat do
       {Redix, name: :redix, host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD")},
       %{
         id: Chat.Redix.PubSub,
-        start: {Redix.PubSub, :start_link, [[host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD")]]},
+        start: {Redix.PubSub, :start_link, [[host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"), name: Chat.Redix.PubSub]]},
       },
       worker(Chat.Presence, [[name: :presence]])
     ]
