@@ -36,7 +36,6 @@ defmodule Chat.RoomChannel do
 
     remote_ip = Enum.at(String.split(message, ":"), 1)
     Logger.debug "banning this IP: #{remote_ip}"
-    # {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
     {:ok, _message} = Redix.command(:redix, ["SADD", "datafruits:chat:ips:banned", remote_ip])
 
     Logger.debug "broadcasting diconnect"
@@ -78,7 +77,6 @@ defmodule Chat.RoomChannel do
       pronouns: msg["pronouns"],
       username: msg["user"]
     })
-    # {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
     {:ok, message} = Redix.command(:redix, ["SADD", "datafruits:chat:sockets", "#{socket.id}:#{msg["user"]}"])
     {:noreply, socket}
   end
@@ -100,8 +98,6 @@ defmodule Chat.RoomChannel do
   def handle_in(event, msg, socket) do
     case event do
       "new:fruit_tip" ->
-        # count in redis
-        #{:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
         {:ok, total_count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "total", 1])
         {:ok, count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "#{msg["fruit"]}", 1])
         Logger.info "fruit count: #{count}"
