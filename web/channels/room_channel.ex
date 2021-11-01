@@ -20,9 +20,7 @@ defmodule Chat.RoomChannel do
     :timer.send_interval(5000, :ping)
     send(self, {:after_join, message})
 
-    {:ok, pubsub} = Redix.PubSub.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-
-    Redix.PubSub.subscribe(pubsub, "datafruits:chat:bans", self())
+    Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:chat:bans", self())
 
     {:ok, socket}
   end
@@ -38,8 +36,8 @@ defmodule Chat.RoomChannel do
 
     remote_ip = Enum.at(String.split(message, ":"), 1)
     Logger.debug "banning this IP: #{remote_ip}"
-    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-    {:ok, _message} = Redix.command(conn, ["SADD", "datafruits:chat:ips:banned", remote_ip])
+    # {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, _message} = Redix.command(:redix, ["SADD", "datafruits:chat:ips:banned", remote_ip])
 
     Logger.debug "broadcasting diconnect"
     Chat.Endpoint.broadcast "user_socket:" <> remote_ip, "disconnect", %{}
@@ -80,8 +78,8 @@ defmodule Chat.RoomChannel do
       pronouns: msg["pronouns"],
       username: msg["user"]
     })
-    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-    {:ok, message} = Redix.command(conn, ["SADD", "datafruits:chat:sockets", "#{socket.id}:#{msg["user"]}"])
+    # {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+    {:ok, message} = Redix.command(:redix, ["SADD", "datafruits:chat:sockets", "#{socket.id}:#{msg["user"]}"])
     {:noreply, socket}
   end
 
@@ -95,8 +93,7 @@ defmodule Chat.RoomChannel do
     Logger.info "> leave #{inspect socket}"
     Logger.info "> leave #{socket.assigns[:user]}"
     broadcast! socket, "user:left", %{user: socket.assigns[:user]}
-    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-    {:ok, message} = Redix.command(conn, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
+    {:ok, message} = Redix.command(:redix, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
     :ok
   end
 
@@ -104,9 +101,9 @@ defmodule Chat.RoomChannel do
     case event do
       "new:fruit_tip" ->
         # count in redis
-        {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-        {:ok, total_count} = Redix.command(conn, ["HINCRBY", "datafruits:fruits", "total", 1])
-        {:ok, count} = Redix.command(conn, ["HINCRBY", "datafruits:fruits", "#{msg["fruit"]}", 1])
+        #{:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+        {:ok, total_count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "total", 1])
+        {:ok, count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "#{msg["fruit"]}", 1])
         Logger.info "fruit count: #{count}"
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
@@ -162,8 +159,7 @@ defmodule Chat.RoomChannel do
         {:noreply, socket}
       "disconnect" ->
         broadcast! socket, "user:left", %{user: socket.assigns[:user]}
-        {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-        {:ok, message} = Redix.command(conn, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
+        {:ok, message} = Redix.command(:redix, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
         {:reply, {:ok, %{msg: "#{msg["user"]} disconnected"}}, socket}
     end
   end
@@ -199,9 +195,8 @@ defmodule Chat.RoomChannel do
   end
 
   defp get_fruit_counts() do
-    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-     {:ok, keys} = Redix.command(conn, ["HKEYS", "datafruits:fruits"])
-     counts = Enum.map(keys, fn x -> {:ok, count } = Redix.command(conn, ["HGET", "datafruits:fruits", x]); {x, count} end) |> Enum.into(%{})
+    {:ok, keys} = Redix.command(:redix, ["HKEYS", "datafruits:fruits"])
+    counts = Enum.map(keys, fn x -> {:ok, count } = Redix.command(:redix, ["HGET", "datafruits:fruits", x]); {x, count} end) |> Enum.into(%{})
     Logger.info counts
     counts
   end

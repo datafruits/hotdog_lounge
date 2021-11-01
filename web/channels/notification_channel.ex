@@ -3,9 +3,7 @@ defmodule Chat.NotificationChannel do
   require Logger
 
   def join("notifications", message, socket) do
-    {:ok, pubsub} = Redix.PubSub.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-
-    Redix.PubSub.subscribe(pubsub, "datafruits:notifications", self())
+    Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:notifications", self())
 
     send(self, {:after_join, message})
 
