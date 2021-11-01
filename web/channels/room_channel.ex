@@ -59,6 +59,7 @@ defmodule Chat.RoomChannel do
     #Logger.info("logs: #{inspect logs}")
     push socket, "join", %{status: "connected"}
     push socket, "presence_state", Presence.list(socket)
+    push socket, "fruit_counts", get_fruit_counts()
     {:noreply, socket}
   end
 
@@ -104,8 +105,8 @@ defmodule Chat.RoomChannel do
       "new:fruit_tip" ->
         # count in redis
         {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
-        {:ok, total_count} = Redix.command(conn, ["INCR", "datafruits:fruits:total"])
-        {:ok, count} = Redix.command(conn, ["INCR", "datafruits:fruits:#{msg["fruit"]}"])
+        {:ok, total_count} = Redix.command(conn, ["HINCRBY", "datafruits:fruits", "total", 1])
+        {:ok, count} = Redix.command(conn, ["HINCRBY", "datafruits:fruits", "#{msg["fruit"]}", 1])
         Logger.info "fruit count: #{count}"
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
@@ -195,5 +196,13 @@ defmodule Chat.RoomChannel do
         {:ok}
       end
     # end
+  end
+
+  defp get_fruit_counts() do
+    {:ok, conn} = Redix.start_link(host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"))
+     {:ok, keys} = Redix.command(conn, ["HKEYS", "datafruits:fruits"])
+     counts = Enum.map(keys, fn x -> {:ok, count } = Redix.command(conn, ["HGET", "datafruits:fruits", x]); {x, count} end) |> Enum.into(%{})
+    Logger.info counts
+    counts
   end
 end
