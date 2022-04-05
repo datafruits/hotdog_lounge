@@ -32,6 +32,7 @@ defmodule Chat.Mixfile do
      {:phoenix_html, "~> 2.4"},
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:jason, "~> 1.0"},
+     {:poison, "~> 5.0"},
      {:exredis, ">= 0.2.4"},
      {:redix, ">= 0.0.0"},
      {:plug_cowboy, "~> 2.0"},

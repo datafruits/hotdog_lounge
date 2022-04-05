@@ -106,6 +106,7 @@ defmodule Chat.RoomChannel do
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
         broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+        send_to_discord msg
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "new:msg_with_token" ->
@@ -118,6 +119,7 @@ defmodule Chat.RoomChannel do
             if claimed_username == msg["user"] do
               broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
                 timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"]}
+              send_to_discord msg
               # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
@@ -188,6 +190,16 @@ defmodule Chat.RoomChannel do
         {:ok}
       end
     # end
+  end
+
+  defp send_to_discord(msg) do
+    avatar_url = if Map.has_key? msg, "avatarUrl" do
+      msg["avatarUrl"]
+    else
+      ""
+    end
+    json = Poison.encode! %{username: msg["user"], avatar_url: avatar_url, content: msg["body"]}
+    :httpc.request :post, {System.get_env("DISCORD_WEBHOOK_URL"), [], 'application/json', json}, [], []
   end
 
   defp get_fruit_counts() do
