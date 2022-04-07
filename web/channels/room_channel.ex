@@ -193,13 +193,15 @@ defmodule Chat.RoomChannel do
   end
 
   defp send_to_discord(msg) do
-    avatar_url = if Map.has_key? msg, "avatarUrl" do
-      msg["avatarUrl"]
-    else
-      ""
+    unless msg["bot"] == true do
+      avatar_url = if Map.has_key? msg, "avatarUrl" do
+        msg["avatarUrl"]
+      else
+        ""
+      end
+      json = Poison.encode! %{username: msg["user"], avatar_url: avatar_url, content: msg["body"]}
+      :httpc.request :post, {System.get_env("DISCORD_WEBHOOK_URL"), [], 'application/json', json}, [], []
     end
-    json = Poison.encode! %{username: msg["user"], avatar_url: avatar_url, content: msg["body"]}
-    :httpc.request :post, {System.get_env("DISCORD_WEBHOOK_URL"), [], 'application/json', json}, [], []
   end
 
   defp get_fruit_counts() do
