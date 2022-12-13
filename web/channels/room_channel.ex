@@ -97,6 +97,8 @@ defmodule Chat.RoomChannel do
 
   def handle_in(event, msg, socket) do
     case event do
+      "track_playback" ->
+        { :ok, count } = Redix.command(:redix, ["HINCRBY", "datafruits:track_playback", "#{msg["track_id"]}", 1])
       "new:fruit_tip" ->
         {:ok, total_count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "total", 1])
         {:ok, count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "#{msg["fruit"]}", 1])
