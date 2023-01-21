@@ -112,7 +112,11 @@ defmodule Chat.RoomChannel do
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
-        broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+        if msg["bot"] == true && msg["avatarUrl"] do
+          broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"], role: "bot", avatarUrl: msg["avatarUrl"]}
+        else
+          broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+        end
         send_to_discord msg
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
