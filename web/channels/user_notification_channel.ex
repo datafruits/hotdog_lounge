@@ -2,7 +2,7 @@ defmodule Chat.UserNotificationChannel do
   use Phoenix.Channel
   require Logger
 
-  def join("notifications", message, socket) do
+  def join("user_notifications", message, socket) do
     Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:user_notifications", self())
 
     send(self, {:after_join, message})
@@ -21,13 +21,13 @@ defmodule Chat.UserNotificationChannel do
 
   # Handle the message coming from the Redis PubSub channel
   def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
-    Logger.debug "got message from pubsub #{message} on #{channel}"
+    Logger.debug "got message from user notifications pubsub #{message} on #{channel}"
 
     # TODO push user_notification ?
     #
-    push socket, "user_notification", %{message: message}
+    # push socket, "user_notification", %{message: message}
     # or make it seem like it came from coach
-    # broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! :O :O :O", timestamp: msg["timestamp"]}
+    broadcast! socket, "new:msg", %{user: "coach", body: "#{message} !!! :O :O :O"}
     { :noreply, socket }
   end
 end
