@@ -12,10 +12,10 @@ defmodule Chat do
       # Here you could define other workers and supervisors as children
       # worker(Chat.Worker, [arg1, arg2, arg3]),
       #worker(ChatLog, [[name: :chat_log]]),
-      {Redix, name: :redix, host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"), username: System.get_env("REDIS_USERNAME")},
+      {Redix, name: :redix, host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD")},
       %{
         id: Chat.Redix.PubSub,
-        start: {Redix.PubSub, :start_link, [[host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"), port: String.to_integer(System.get_env("REDIS_PORT")), username: System.get_env("REDIS_USERNAME"), name: Chat.Redix.PubSub]]},
+        start: {Redix.PubSub, :start_link, [[host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"), name: Chat.Redix.PubSub]]},
       },
       worker(Chat.Presence, [[name: :presence]])
     ]
