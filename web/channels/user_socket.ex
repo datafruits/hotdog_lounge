@@ -5,7 +5,6 @@ defmodule Chat.UserSocket do
   channel "rooms:*", Chat.RoomChannel
   channel "metadata", Chat.MetadataChannel
   channel "notifications", Chat.NotificationChannel
-  channel "user_notifications", Chat.UserNotificationChannel
 
   def connect(_params, socket, connect_info) do
     env = Application.get_env(:chat, :env)
