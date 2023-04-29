@@ -23,11 +23,7 @@ defmodule Chat.UserNotificationChannel do
   def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
     Logger.debug "got message from user notifications pubsub #{message} on #{channel}"
 
-    # TODO push user_notification ?
-    #
-    # push socket, "user_notification", %{message: message}
-    # or make it seem like it came from coach
-    broadcast! socket, "new:msg", %{user: "coach", body: "#{message} !!! :O :O :O"}
+    push socket, "new:msg", %{user: "coach", body: "#{message} !!! :O :O :O"}
     { :noreply, socket }
   end
 end
