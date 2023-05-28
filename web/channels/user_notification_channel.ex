@@ -22,8 +22,23 @@ defmodule Chat.UserNotificationChannel do
   # Handle the message coming from the Redis PubSub channel
   def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
     Logger.debug "got message from user notifications pubsub #{message} on #{channel}"
+    msg = %{user: "coach", body: "#{message} !!! :O :O :O"}
 
-    push socket, "new:msg", %{user: "coach", body: "#{message} !!! :O :O :O"}
+    push socket, "new:msg", msg
+    send_to_discord msg
     { :noreply, socket }
   end
+
+  defp send_to_discord(msg) do
+    unless msg["bot"] == true do
+      avatar_url = if Map.has_key? msg, "avatarUrl" do
+        msg["avatarUrl"]
+      else
+        ""
+      end
+      json = Poison.encode! %{username: msg["user"], avatar_url: avatar_url, content: msg["body"]}
+      :httpc.request :post, {System.get_env("DISCORD_WEBHOOK_URL"), [], 'application/json', json}, [], []
+    end
+  end
+
 end
