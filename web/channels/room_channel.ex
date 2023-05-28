@@ -211,6 +211,8 @@ defmodule Chat.RoomChannel do
         ""
       end
       json = Poison.encode! %{username: msg["user"], avatar_url: avatar_url, content: msg["body"]}
+      Logger.debug "json for disord webhook"
+      Logger.debug json 
       :httpc.request :post, {System.get_env("DISCORD_WEBHOOK_URL"), [], 'application/json', json}, [], []
     end
   end
