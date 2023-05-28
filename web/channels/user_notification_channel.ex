@@ -22,7 +22,7 @@ defmodule Chat.UserNotificationChannel do
   # Handle the message coming from the Redis PubSub channel
   def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
     Logger.debug "got message from user notifications pubsub #{message} on #{channel}"
-    msg = %{user: "coach", body: "#{message} !!! :O :O :O"}
+    msg = %{"user" => "coach", "body" => "#{message} !!! :O :O :O"}
 
     push socket, "new:msg", msg
     Logger.debug "sending user_notifications msg to discord"
