@@ -3,7 +3,7 @@ defmodule Chat.PresenceController do
   alias Chat.Presence
 
   def index(conn, _params) do
-    presence_data = Presence.list("user:")
+    presence_data = Presence.list("rooms:lobby")
     json(conn, %{presence: presence_data})
   end
 end
