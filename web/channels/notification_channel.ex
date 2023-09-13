@@ -5,7 +5,7 @@ defmodule Chat.NotificationChannel do
   def join("notifications", message, socket) do
     Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:notifications", self())
 
-    send(self, {:after_join, message})
+    send(self(), {:after_join, message})
 
     {:ok, socket}
   end

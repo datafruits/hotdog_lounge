@@ -10,7 +10,7 @@ defmodule Chat.MetadataChannel do
 
     {:ok, donation_link} = Redix.command(:redix, ["GET", "datafruits:donation_link"])
 
-    send(self, {:after_join, %{message: message, donation_link: donation_link}})
+    send(self(), {:after_join, %{message: message, donation_link: donation_link}})
     # push socket, "metadata", %{message: message}
 
     {:ok, socket}
