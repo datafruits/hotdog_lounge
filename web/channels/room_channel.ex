@@ -18,7 +18,7 @@ defmodule Chat.RoomChannel do
   def join("rooms:lobby", message, socket) do
     Process.flag(:trap_exit, true)
     :timer.send_interval(5000, :ping)
-    send(self, {:after_join, message})
+    send(self(), {:after_join, message})
 
     Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:chat:bans", self())
 
@@ -135,32 +135,32 @@ defmodule Chat.RoomChannel do
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
           {:error, _} ->
-            send(self, {:after_fail_authorize, "bad token"})
+            send(self(), {:after_fail_authorize, "bad token"})
             {:noreply, socket}
         end
       "authorize_token" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"], msg["token"]) do
           {:ok} ->
-            send(self, {:after_authorize, msg})
+            send(self(), {:after_authorize, msg})
             socket = socket
               |> assign(:user, msg["user"])
               |> assign(:token, msg["token"])
             {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, socket}
           {:error, reason} ->
-            send(self, {:after_fail_authorize, reason})
+            send(self(), {:after_fail_authorize, reason})
             {:noreply, socket}
         end
       "authorize" ->
         Logger.debug "authorize_anonymous: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"]) do
           {:ok} ->
-            send(self, {:after_authorize, msg})
+            send(self(), {:after_authorize, msg})
             socket = socket
               |> assign(:user, msg["user"])
             {:reply, {:ok, %{msg: "#{msg["user"]} authorized anonymously"}}, socket}
           {:error, reason} ->
-            send(self, {:after_fail_authorize, reason})
+            send(self(), {:after_fail_authorize, reason})
             {:noreply, socket}
         end
       "ban" ->

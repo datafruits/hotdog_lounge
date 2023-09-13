@@ -17,4 +17,9 @@ defmodule Chat.Router do
 
     get "/", PageController, :index
   end
+
+  scope "/api", Chat do
+    pipe_through :api
+    get "/presence", PresenceController, :index
+  end
 end

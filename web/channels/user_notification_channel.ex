@@ -5,7 +5,7 @@ defmodule Chat.UserNotificationChannel do
   def join("user_notifications", message, socket) do
     Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:user_notifications", self())
 
-    send(self, {:after_join, message})
+    send(self(), {:after_join, message})
 
     {:ok, socket}
   end
@@ -25,6 +25,8 @@ defmodule Chat.UserNotificationChannel do
     msg = %{"user" => "coach", "body" => "#{message} !!! :O :O :O"}
 
     push socket, "new:msg", msg
+    # TODO should push ID too?
+    # push socket, "new:notification", msg
     Logger.debug "sending user_notifications msg to discord"
     send_to_discord msg
     { :noreply, socket }
