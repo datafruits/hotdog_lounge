@@ -186,7 +186,7 @@ defmodule Chat.RoomChannel do
           end
         end
       {:error, _} ->
-        {:error, "bad token >:| what is wrong with you"}
+        {:error, "bad token :| check your fruitiverse donglficiation"}
     end
   end
 
