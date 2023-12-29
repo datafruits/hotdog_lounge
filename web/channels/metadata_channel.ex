@@ -4,20 +4,22 @@ defmodule Chat.MetadataChannel do
 
   def join("metadata", message, socket) do
     Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:metadata", self())
+    Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:metadata:url", self())
     Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:donation_link", self())
 
     {:ok, message} = Redix.command(:redix, ["GET", "datafruits:metadata"])
+    {:ok, metadata_url} = Redix.command(:redix, ["GET", "datafruits:metadata:url"])
 
     {:ok, donation_link} = Redix.command(:redix, ["GET", "datafruits:donation_link"])
 
-    send(self(), {:after_join, %{message: message, donation_link: donation_link}})
+    send(self(), {:after_join, %{message: message, donation_link: donation_link, metadata_url: metadata_url}})
     # push socket, "metadata", %{message: message}
 
     {:ok, socket}
   end
 
-  def handle_info({:after_join, %{message: message, donation_link: donation_link}}, socket) do
-    push socket, "metadata", %{message: message, donation_link: donation_link}
+  def handle_info({:after_join, %{message: message, donation_link: donation_link, metadata_url: metadata_url}}, socket) do
+    push socket, "metadata", %{message: message, donation_link: donation_link, metadata_url: metadata_url}
     {:noreply, socket}
   end
 
@@ -35,6 +37,8 @@ defmodule Chat.MetadataChannel do
         push socket, "metadata", %{message: message}
       "datafruits:donation_link" ->
         push socket, "metadata", %{donation_link: message}
+      "datafruits:metadata:url" ->
+        push socket, "metadata", %{metadata_url: metadata_url}
     end
 
     {:noreply, socket}
