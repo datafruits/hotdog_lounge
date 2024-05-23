@@ -13,7 +13,7 @@ config :chat, Chat.Endpoint,
   debug_errors: false,
   pubsub: [name: Chat.PubSub,
            adapter: Phoenix.PubSub.PG2],
-           check_origin: ["//datafruitstest.s3-website-us-east-1.amazonaws.com/", "//localhost:4200", "//localhost:3000", "//localhost:7357", "//datafruits.fm", "//datafruits-fastboot.herokuapp.com/", "//www.datafruits.fm", "https://datafruits.fm", "https://www.datafruits.fm", "https://datafruits-photobooth.glitch.me", "//*.herokuapp.com", "//datafruitsfm.netlify.app/", "https://beta.streampusher.com/", "https://streampusher.com"]
+           check_origin: ["//localhost:4200", "//localhost:3000", "//localhost:7357", "//datafruits.fm", "//datafruits-fastboot.herokuapp.com/", "//www.datafruits.fm", "https://datafruits.fm", "https://www.datafruits.fm", "https://datafruits-photobooth.glitch.me", "//*.herokuapp.com", "//datafruitsfm.netlify.app/", "https://beta.streampusher.com/", "https://streampusher.com", "//datafruits-mojiplode.glitch.me/"]
 
 config :chat, env: Mix.env
 
