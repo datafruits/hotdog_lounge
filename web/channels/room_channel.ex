@@ -39,7 +39,8 @@ defmodule Chat.RoomChannel do
     {:ok, _message} = Redix.command(:redix, ["SADD", "datafruits:chat:ips:banned", remote_ip])
 
     Logger.debug "broadcasting diconnect"
-    Chat.Endpoint.broadcast "user_socket:" <> remote_ip, "disconnect", %{}
+    # should this be username instead???
+    Chat.Endpoint.broadcast "user_socket:" <> remote_ip, "disconnect", %{user: message[:user]}
     Logger.debug "done"
 
     {:noreply, socket}
@@ -107,7 +108,8 @@ defmodule Chat.RoomChannel do
         Logger.info "fruit count: #{count}"
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         if(msg["isFruitSummon"] == true) do
-          broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! :O :O :O", timestamp: msg["timestamp"]}
+          three_random_dingers = Enum.take_random(random_dingers(), 3) |> Enum.join(" ")
+          broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! #{three_random_dingers}", timestamp: msg["timestamp"]}
         end
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
@@ -212,7 +214,7 @@ defmodule Chat.RoomChannel do
       end
       json = Poison.encode! %{username: msg["user"], avatar_url: avatar_url, content: msg["body"]}
       Logger.debug "json for disord webhook"
-      Logger.debug json 
+      Logger.debug json
       :httpc.request :post, {System.get_env("DISCORD_WEBHOOK_URL"), [], 'application/json', json}, [], []
     end
   end
@@ -222,5 +224,16 @@ defmodule Chat.RoomChannel do
     counts = Enum.map(keys, fn x -> {:ok, count } = Redix.command(:redix, ["HGET", "datafruits:fruits", x]); {x, count} end) |> Enum.into(%{})
     Logger.info counts
     counts
+  end
+
+  defp random_dingers() do
+    [
+      ":O",
+      ":3",
+      ">:O",
+      "B-)",
+      "XD",
+      ":)"
+    ]
   end
 end
