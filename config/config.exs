@@ -26,7 +26,9 @@ config :chat, Chat.Endpoint,
     "//*.netlify.app",
     "//datafruitsfm.netlify.app/",
     "https://beta.streampusher.com/",
-    "https://streampusher.com"
+    "https://streampusher.com",
+    "//datafruits-mojiplode.glitch.me",
+    "//*.glitch.me"
   ]
 
 config :chat, env: Mix.env

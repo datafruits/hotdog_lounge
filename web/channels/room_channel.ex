@@ -18,7 +18,7 @@ defmodule Chat.RoomChannel do
   def join("rooms:lobby", message, socket) do
     Process.flag(:trap_exit, true)
     :timer.send_interval(5000, :ping)
-    send(self, {:after_join, message})
+    send(self(), {:after_join, message})
 
     Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:chat:bans", self())
 
@@ -39,7 +39,8 @@ defmodule Chat.RoomChannel do
     {:ok, _message} = Redix.command(:redix, ["SADD", "datafruits:chat:ips:banned", remote_ip])
 
     Logger.debug "broadcasting diconnect"
-    Chat.Endpoint.broadcast "user_socket:" <> remote_ip, "disconnect", %{}
+    # should this be username instead???
+    Chat.Endpoint.broadcast "user_socket:" <> remote_ip, "disconnect", %{user: message[:user]}
     Logger.debug "done"
 
     {:noreply, socket}
@@ -107,7 +108,8 @@ defmodule Chat.RoomChannel do
         Logger.info "fruit count: #{count}"
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         if(msg["isFruitSummon"] == true) do
-          broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! :O :O :O", timestamp: msg["timestamp"]}
+          three_random_dingers = Enum.take_random(random_dingers(), 3) |> Enum.join(" ")
+          broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! #{three_random_dingers}", timestamp: msg["timestamp"]}
         end
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
@@ -135,32 +137,32 @@ defmodule Chat.RoomChannel do
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
           {:error, _} ->
-            send(self, {:after_fail_authorize, "bad token"})
+            send(self(), {:after_fail_authorize, "bad token"})
             {:noreply, socket}
         end
       "authorize_token" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"], msg["token"]) do
           {:ok} ->
-            send(self, {:after_authorize, msg})
+            send(self(), {:after_authorize, msg})
             socket = socket
               |> assign(:user, msg["user"])
               |> assign(:token, msg["token"])
             {:reply, {:ok, %{msg: "#{msg["user"]} authorized"}}, socket}
           {:error, reason} ->
-            send(self, {:after_fail_authorize, reason})
+            send(self(), {:after_fail_authorize, reason})
             {:noreply, socket}
         end
       "authorize" ->
         Logger.debug "authorize_anonymous: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"]) do
           {:ok} ->
-            send(self, {:after_authorize, msg})
+            send(self(), {:after_authorize, msg})
             socket = socket
               |> assign(:user, msg["user"])
             {:reply, {:ok, %{msg: "#{msg["user"]} authorized anonymously"}}, socket}
           {:error, reason} ->
-            send(self, {:after_fail_authorize, reason})
+            send(self(), {:after_fail_authorize, reason})
             {:noreply, socket}
         end
       "ban" ->
@@ -186,7 +188,7 @@ defmodule Chat.RoomChannel do
           end
         end
       {:error, _} ->
-        {:error, "bad token >:| what is wrong with you"}
+        {:error, "bad token :| check your fruitiverse donglficiation"}
     end
   end
 
@@ -211,6 +213,8 @@ defmodule Chat.RoomChannel do
         ""
       end
       json = Poison.encode! %{username: msg["user"], avatar_url: avatar_url, content: msg["body"]}
+      Logger.debug "json for disord webhook"
+      Logger.debug json
       :httpc.request :post, {System.get_env("DISCORD_WEBHOOK_URL"), [], 'application/json', json}, [], []
     end
   end
@@ -220,5 +224,23 @@ defmodule Chat.RoomChannel do
     counts = Enum.map(keys, fn x -> {:ok, count } = Redix.command(:redix, ["HGET", "datafruits:fruits", x]); {x, count} end) |> Enum.into(%{})
     Logger.info counts
     counts
+  end
+
+  defp random_dingers() do
+    [
+      ":O",
+      ":3",
+      ">:O",
+      "B-)",
+      "XD",
+      ":)",
+      "⎝｡⌓°⎞",
+      "ᐡ𖦹‎ ̫ 𖦹‎ᐡ",
+      "o_O",
+      "O_o",
+      "/o/",
+      "\\o/",
+      "\\o\\",
+    ]
   end
 end
