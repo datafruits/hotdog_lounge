@@ -15,6 +15,7 @@ config :chat, Chat.Endpoint,
   check_origin: [
     "//datafruitstest.s3-website-us-east-1.amazonaws.com/",
     "//localhost:4200",
+    "//192.168.0.30:4200",
     "//localhost:3000",
     "//localhost:7357",
     "//datafruits.fm",

@@ -17,6 +17,7 @@ defmodule Chat do
         id: Chat.Redix.PubSub,
         start: {Redix.PubSub, :start_link, [[host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"), name: Chat.Redix.PubSub]]},
       },
+      Chat.GlobalRedisSubscriber, # Add the Redis subscriber to the supervision tree
       worker(Chat.Presence, [[name: :presence]])
     ]
 
