@@ -20,19 +20,14 @@ defmodule Chat.RoomChannel do
     :timer.send_interval(5000, :ping)
     send(self(), {:after_join, message})
 
-    Redix.PubSub.subscribe(Chat.Redix.PubSub, "datafruits:chat:bans", self())
+    Phoenix.PubSub.subscribe(Chat.PubSub, "bans")
 
     {:ok, socket}
   end
 
-  # Avoid throwing an error when a subscribed message enters the channel
-  def handle_info({:redix_pubsub, _redix_pid, _ref, :subscribed, _}, socket) do
-    {:noreply, socket}
-  end
-
   # Handle the message coming from the Redis PubSub channel (for chat bans)
-  def handle_info({:redix_pubsub, _redix_id, _ref, :message, %{channel: channel, payload: message}}, socket) do
-    Logger.debug "got message from pubsub #{message} on #{channel}"
+  def handle_info(%{message: message}, socket) do
+    Logger.debug "got message from pubsub #{message} on #{socket.topic}"
 
     remote_ip = Enum.at(String.split(message, ":"), 1)
     Logger.debug "banning this IP: #{remote_ip}"
@@ -108,8 +103,7 @@ defmodule Chat.RoomChannel do
         Logger.info "fruit count: #{count}"
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         if(msg["isFruitSummon"] == true) do
-          three_random_dingers = Enum.take_random(random_dingers(), 3) |> Enum.join(" ")
-          broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! #{three_random_dingers}", timestamp: msg["timestamp"]}
+          broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! #{Chat.Dingers.random_dingers()}", timestamp: msg["timestamp"]}
         end
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
@@ -224,23 +218,5 @@ defmodule Chat.RoomChannel do
     counts = Enum.map(keys, fn x -> {:ok, count } = Redix.command(:redix, ["HGET", "datafruits:fruits", x]); {x, count} end) |> Enum.into(%{})
     Logger.info counts
     counts
-  end
-
-  defp random_dingers() do
-    [
-      ":O",
-      ":3",
-      ">:O",
-      "B-)",
-      "XD",
-      ":)",
-      "⎝｡⌓°⎞",
-      "ᐡ𖦹‎ ̫ 𖦹‎ᐡ",
-      "o_O",
-      "O_o",
-      "/o/",
-      "\\o/",
-      "\\o\\",
-    ]
   end
 end
