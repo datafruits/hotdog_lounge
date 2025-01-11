@@ -103,6 +103,15 @@ defmodule Chat.RoomChannel do
         Logger.info "fruit count: #{count}"
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         if(msg["isFruitSummon"] == true) do
+          # add to limit break meter here ???
+          current_limit_break = Redix.get "datafruits:limit_break_meter"
+          { cost, _ } = Integer.parse msg["cost"]
+          new_limit_break = current_limit_break + (cost * 0.025)
+          Redix.set "datafruits:limit_break_meter", new_limit_break
+          # if new_limit_break >= 100
+            # broadcast! socket, "limit_break_reached"
+            # trigger combo???
+          # end
           broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! #{Chat.Dingers.random_dingers()}", timestamp: msg["timestamp"]}
         end
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
