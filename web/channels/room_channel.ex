@@ -98,20 +98,73 @@ defmodule Chat.RoomChannel do
       "new:fruit_tip" ->
         {:ok, total_count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "total", 1])
         {:ok, count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "#{msg["fruit"]}", 1])
-        # might need user id here?
+
         {:ok, user_count} = Redix.command(:redix, ["HINCRBY", "datafruits:user_fruit_count:#{msg["user"]}", "#{msg["fruit"]}", 1])
+
+        # if new user fruit count hit a multiple of 100, increase limit break or pre-limit break by 1
         Logger.info "fruit count: #{count}"
+        Logger.info msg
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         if(msg["isFruitSummon"] == true) do
           # add to limit break meter here ???
-          current_limit_break = Redix.get "datafruits:limit_break_meter"
-          { cost, _ } = Integer.parse msg["cost"]
+          # { :ok, current_limit_break } = Redix.command(:redix, ["GET", "datafruits:limit_break_meter"])
+          current_limit_break = case Redix.command(:redix, ["GET", "datafruits:limit_break_meter"]) do
+            { :ok, value } ->
+              Logger.info "got value: #{value}"
+              case value do
+                _ when is_integer(value) ->
+                  Logger.info("its an integer")
+                  value
+                _ when is_float(value) ->
+                  Logger.info("its a float ")
+                  value
+                "" ->
+                  Logger.info("its blank string")
+                  0
+                nil ->
+                  Logger.info("its nil")
+                  0
+                _ when is_binary(value) ->
+                  case Float.parse(value) do
+                    {parsed_value, _rest} when is_integer(parsed_value) ->
+                      Logger.info("parsed as integer from string")
+                      parsed_value
+
+                    {parsed_value, _rest} when is_float(parsed_value) ->
+                      Logger.info("parsed as float from string")
+                      parsed_value
+
+                    :error ->
+                      Logger.info("not an integer or float")
+                      0
+                  end
+              end
+          end
+          Logger.info "current_limit_break: #{current_limit_break}"
+          cost = msg["cost"]
           new_limit_break = current_limit_break + (cost * 0.025)
-          Redix.set "datafruits:limit_break_meter", new_limit_break
-          # if new_limit_break >= 100
-            # broadcast! socket, "limit_break_reached"
+            # new_limit_break = current_limit_break + cost
+          Logger.info "new_limit_break: #{new_limit_break}"
+          Redix.command(:redix, ["SET", "datafruits:limit_break_meter", new_limit_break])
+          broadcast! socket, "limit_break_increase", %{user: msg["user"], timestamp: msg["timestamp"], percentage: new_limit_break}
+          if new_limit_break >= 100 do
+            Logger.info "limit break reached!"
+            broadcast! socket, "limit_break_reached", %{user: msg["user"], timestamp: msg["timestamp"], percentage: new_limit_break}
             # trigger combo???
-          # end
+            # reset to 0 here??
+            Redix.command(:redix, ["SET", "datafruits:limit_break_meter", 0.0])
+            # For now pick a random combo ???
+            # later, influence combo by which fruits/summons were sent during the limit break
+            #   mega cabbage bounce
+            #   the glorpening??
+            #   fruit sundae spiral
+            #   3D strawbur wink
+            #   grandpa beans shake
+            #   futsu
+            #
+            #   chat destroyed...
+            #   virus popups
+          end
           broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! #{Chat.Dingers.random_dingers()}", timestamp: msg["timestamp"]}
         end
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
@@ -228,4 +281,13 @@ defmodule Chat.RoomChannel do
     Logger.info counts
     counts
   end
+
+  # defp is_limit_break_activated() do
+  # end
+  #
+  # defp add_to_pre_limit_break() do
+  # end
+  #
+  # defp add_to_limit_break() do
+  # end
 end
