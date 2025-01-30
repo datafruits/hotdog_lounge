@@ -16,27 +16,7 @@ defmodule Chat.UserNotificationChannel do
 
     msg = %{"user" => "coach", "body" => "#{message} !!! #{Chat.Dingers.random_dingers()}"}
 
-    push socket, "new:msg", msg
-    Logger.debug "sending user_notifications msg to discord"
-    send_to_discord msg
+    broadcast! socket, "new:msg", msg
     { :noreply, socket }
   end
-
-  defp send_to_discord(msg) do
-    Logger.debug "in UserNotificationChannel send_to_discord"
-    unless msg["bot"] == true do
-      avatar_url = if Map.has_key? msg, "avatarUrl" do
-        msg["avatarUrl"]
-      else
-        ""
-      end
-      Logger.debug "sending http request for discord webhook"
-      Logger.debug msg
-      json = Poison.encode! %{username: msg["user"], avatar_url: avatar_url, content: msg["body"]}
-      Logger.debug "json for disord webhook"
-      Logger.debug json
-      :httpc.request :post, {System.get_env("DISCORD_WEBHOOK_URL"), [], 'application/json', json}, [], []
-    end
-  end
-
 end
