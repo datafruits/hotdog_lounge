@@ -5,8 +5,6 @@ defmodule Chat.UserNotificationChannel do
   def join("user_notifications", message, socket) do
     # Subscribe the channel to Phoenix PubSub
     Logger.debug("JOINED user_notifications channel - socket #{inspect(socket)}")
-    Phoenix.PubSub.subscribe(Chat.PubSub, "user_notifications")
-
     {:ok, socket}
   end
 
