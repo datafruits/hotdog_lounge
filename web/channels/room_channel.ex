@@ -5,6 +5,8 @@ defmodule Chat.RoomChannel do
 
   @max_nick_length 30
 
+  @treasures ["fruit_tickets", "glorp_points", "bonezo"]
+
   @doc """
   Authorize socket to subscribe and broadcast events on this channel & topic
 
@@ -18,11 +20,26 @@ defmodule Chat.RoomChannel do
   def join("rooms:lobby", message, socket) do
     Process.flag(:trap_exit, true)
     :timer.send_interval(5000, :ping)
+    # TODO how long ???
+    :timer.send_interval(60000, :futsu_drop)
     send(self(), {:after_join, message})
 
     Phoenix.PubSub.subscribe(Chat.PubSub, "bans")
 
     {:ok, socket}
+  end
+
+  def handle_info(:futsu_drop, socket) do
+    # TODO make 1 in 10 chance ???
+    treasure = Enum.random(@treasures)
+    amount = if treasure == :bonezo, do: 0, else: :rand.uniform(100)
+    uuid = UUID.uuid4()
+    timestamp = :erlang.system_time(:millisecond)
+
+    broadcast! socket, "new:msg", %{user: "Futsu", body: "Coo! I've dropped a treasure package!", is_treasure: true, treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}
+    # broadcast! socket, "treasure:dropped", %{treasure: treasure}
+
+    {:noreply, socket}
   end
 
   # Handle the message coming from the Redis PubSub channel (for chat bans)
@@ -91,6 +108,7 @@ defmodule Chat.RoomChannel do
     :ok
   end
 
+  # TODO use :erlang.system_time(:millisecond) for all timestamps
   def handle_in(event, msg, socket) do
     case event do
       "track_playback" ->
@@ -134,6 +152,40 @@ defmodule Chat.RoomChannel do
             send(self(), {:after_fail_authorize, "bad token"})
             {:noreply, socket}
         end
+      # user tries to open treasure
+      "treasure:open" ->
+        uuid = msg["uuid"]
+        treasure = msg["treasure"]
+        amount = msg["amount"]
+        user = msg["user"]
+        token = msg["token"]
+        # TODO auth
+        # case Chat.Token.verify_and_validate(msg["token"]) do
+        #   {:ok, claims} ->
+        #     claimed_username = claims["username"]
+        #     if claimed_username == msg["user"] do
+          # broadcast! socket, "new:msg", %{user: "Futsu", body: message}
+        broadcast! socket, "treasure:opened", %{user: user, treasure: treasure, amount: amount, uuid: uuid}
+        # {:reply, {:ok, %{reward: reward}}, socket}
+        {:noreply, socket}
+      # user successfully opened treasure
+      "treasure:received" ->
+        treasure = msg["treasure"]
+        amount = msg["amount"]
+        user = msg["user"]
+        uuid = msg["uuid"]
+        token = msg["token"]
+        # TODO auth
+
+        message = case treasure do
+          "fruit_tickets" -> "#{user} got #{amount} fruit tickets!"
+          "glorp_points" -> "#{user} got #{amount} glorp points!"
+          "bonezo" -> "#{user} got... BONEZO! Nothing! Better luck next time!"
+        end
+
+        broadcast! socket, "new:msg", %{user: "Futsu", body: message}
+        {:noreply, socket}
+      # TODO treasure open fail case
       "authorize_token" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"], msg["token"]) do
