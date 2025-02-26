@@ -18,11 +18,21 @@ defmodule Chat.RoomChannel do
   def join("rooms:lobby", message, socket) do
     Process.flag(:trap_exit, true)
     :timer.send_interval(5000, :ping)
+    # TODO how long ???
+    # :timer.send_interval(60000, :futsu_drop)
+    # :timer.send_interval(5000, :futsu_drop)
     send(self(), {:after_join, message})
 
     Phoenix.PubSub.subscribe(Chat.PubSub, "bans")
+    Phoenix.PubSub.subscribe(Chat.PubSub, "treasure_drop")
 
     {:ok, socket}
+  end
+
+  def handle_info(%{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}, socket) do
+    Logger.debug("sending treasure drop: #{uuid}")
+    broadcast! socket, "new:msg", %{user: "Futsu", body: "Coo! I've dropped a treasure package!", is_treasure: true, treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp, avatarUrl: "https://datafruits.fm/assets/images/emojis//futsu.png", role: "bot"}
+    {:noreply, socket}
   end
 
   # Handle the message coming from the Redis PubSub channel (for chat bans)
@@ -91,7 +101,9 @@ defmodule Chat.RoomChannel do
     :ok
   end
 
+  # TODO use :erlang.system_time(:millisecond) for all timestamps
   def handle_in(event, msg, socket) do
+    Logger.info "handle_in event: #{inspect event}, #{inspect msg}, #{inspect socket}"
     case event do
       "track_playback" ->
         { :ok, count } = Redix.command(:redix, ["HINCRBY", "datafruits:track_plays", "#{msg["track_id"]}", 1])
@@ -134,6 +146,47 @@ defmodule Chat.RoomChannel do
             send(self(), {:after_fail_authorize, "bad token"})
             {:noreply, socket}
         end
+      # user tries to open treasure
+      "treasure:open" ->
+        Logger.debug "treasure:open event"
+        uuid = msg["uuid"]
+        treasure = msg["treasure"]
+        amount = msg["amount"]
+        user = msg["user"]
+        token = msg["token"]
+        # TODO auth
+        case Chat.Token.verify_and_validate(msg["token"]) do
+          {:ok, claims} ->
+            claimed_username = claims["username"]
+            if claimed_username == user do
+              broadcast! socket, "treasure:opened", %{user: user, treasure: treasure, amount: amount, uuid: uuid}
+              {:noreply, socket}
+            end
+          {:error, _} ->
+            send(self(), {:after_fail_authorize, "bad token"})
+            {:noreply, socket}
+        end
+      # user successfully opened treasure
+      "treasure:received" ->
+        treasure = msg["treasure"]
+        amount = msg["amount"]
+        user = msg["user"]
+        uuid = msg["uuid"]
+        token = msg["token"]
+        # TODO auth
+
+        message = case treasure do
+          "fruit_tickets" -> "@#{user} got #{amount} fruit tickets!"
+          "glorp_points" -> "@#{user} got #{amount} glorp points!"
+          "bonezo" -> "@#{user} got... BONEZO! Nothing! Better luck next time!"
+        end
+
+        Logger.debug "sending new:msg for treasure received..."
+        new_uuid = UUID.uuid4()
+        timestamp = :erlang.system_time(:millisecond)
+        broadcast! socket, "new:msg", %{user: "Futsu", body: message, uuid: new_uuid, timestamp: timestamp, role: "bot", avatarUrl: "https://datafruits.fm/assets/images/emojis//futsu.png"}
+        {:noreply, socket}
+      # TODO treasure open fail case
       "authorize_token" ->
         Logger.debug "authorize: #{msg["user"]}, #{msg["token"]}"
         case authorize(msg["user"], msg["token"]) do
