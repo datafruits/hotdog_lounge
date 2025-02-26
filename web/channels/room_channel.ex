@@ -31,7 +31,7 @@ defmodule Chat.RoomChannel do
 
   def handle_info(%{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}, socket) do
     Logger.debug("sending treasure drop: #{uuid}")
-    broadcast! socket, "new:msg", %{user: "Futsu", body: "Coo! I've dropped a treasure package!", is_treasure: true, treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}
+    broadcast! socket, "new:msg", %{user: "Futsu", body: "Coo! I've dropped a treasure package!", is_treasure: true, treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp, avatarUrl: "https://datafruits.fm/assets/images/emojis//futsu.png", role: "bot"}
     {:noreply, socket}
   end
 
@@ -103,6 +103,7 @@ defmodule Chat.RoomChannel do
 
   # TODO use :erlang.system_time(:millisecond) for all timestamps
   def handle_in(event, msg, socket) do
+    Logger.info "handle_in event: #{inspect event}, #{inspect msg}, #{inspect socket}"
     case event do
       "track_playback" ->
         { :ok, count } = Redix.command(:redix, ["HINCRBY", "datafruits:track_plays", "#{msg["track_id"]}", 1])
@@ -147,6 +148,7 @@ defmodule Chat.RoomChannel do
         end
       # user tries to open treasure
       "treasure:open" ->
+        Logger.debug "treasure:open event"
         uuid = msg["uuid"]
         treasure = msg["treasure"]
         amount = msg["amount"]
@@ -174,12 +176,15 @@ defmodule Chat.RoomChannel do
         # TODO auth
 
         message = case treasure do
-          "fruit_tickets" -> "#{user} got #{amount} fruit tickets!"
-          "glorp_points" -> "#{user} got #{amount} glorp points!"
-          "bonezo" -> "#{user} got... BONEZO! Nothing! Better luck next time!"
+          "fruit_tickets" -> "@#{user} got #{amount} fruit tickets!"
+          "glorp_points" -> "@#{user} got #{amount} glorp points!"
+          "bonezo" -> "@#{user} got... BONEZO! Nothing! Better luck next time!"
         end
 
-        broadcast! socket, "new:msg", %{user: "Futsu", body: message}
+        Logger.debug "sending new:msg for treasure received..."
+        new_uuid = UUID.uuid4()
+        timestamp = :erlang.system_time(:millisecond)
+        broadcast! socket, "new:msg", %{user: "Futsu", body: message, uuid: new_uuid, timestamp: timestamp, role: "bot", avatarUrl: "https://datafruits.fm/assets/images/emojis//futsu.png"}
         {:noreply, socket}
       # TODO treasure open fail case
       "authorize_token" ->
