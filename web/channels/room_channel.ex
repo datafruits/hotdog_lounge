@@ -5,8 +5,6 @@ defmodule Chat.RoomChannel do
 
   @max_nick_length 30
 
-  @treasures ["fruit_tickets", "glorp_points", "bonezo"]
-
   @doc """
   Authorize socket to subscribe and broadcast events on this channel & topic
 
@@ -21,24 +19,19 @@ defmodule Chat.RoomChannel do
     Process.flag(:trap_exit, true)
     :timer.send_interval(5000, :ping)
     # TODO how long ???
-    :timer.send_interval(60000, :futsu_drop)
+    # :timer.send_interval(60000, :futsu_drop)
+    # :timer.send_interval(5000, :futsu_drop)
     send(self(), {:after_join, message})
 
     Phoenix.PubSub.subscribe(Chat.PubSub, "bans")
+    Phoenix.PubSub.subscribe(Chat.PubSub, "treasure_drop")
 
     {:ok, socket}
   end
 
-  def handle_info(:futsu_drop, socket) do
-    # TODO make 1 in 10 chance ???
-    treasure = Enum.random(@treasures)
-    amount = if treasure == :bonezo, do: 0, else: :rand.uniform(100)
-    uuid = UUID.uuid4()
-    timestamp = :erlang.system_time(:millisecond)
-
+  def handle_info(%{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}, socket) do
+    Logger.debug("sending treasure drop: #{uuid}")
     broadcast! socket, "new:msg", %{user: "Futsu", body: "Coo! I've dropped a treasure package!", is_treasure: true, treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}
-    # broadcast! socket, "treasure:dropped", %{treasure: treasure}
-
     {:noreply, socket}
   end
 
@@ -160,14 +153,17 @@ defmodule Chat.RoomChannel do
         user = msg["user"]
         token = msg["token"]
         # TODO auth
-        # case Chat.Token.verify_and_validate(msg["token"]) do
-        #   {:ok, claims} ->
-        #     claimed_username = claims["username"]
-        #     if claimed_username == msg["user"] do
-          # broadcast! socket, "new:msg", %{user: "Futsu", body: message}
-        broadcast! socket, "treasure:opened", %{user: user, treasure: treasure, amount: amount, uuid: uuid}
-        # {:reply, {:ok, %{reward: reward}}, socket}
-        {:noreply, socket}
+        case Chat.Token.verify_and_validate(msg["token"]) do
+          {:ok, claims} ->
+            claimed_username = claims["username"]
+            if claimed_username == user do
+              broadcast! socket, "treasure:opened", %{user: user, treasure: treasure, amount: amount, uuid: uuid}
+              {:noreply, socket}
+            end
+          {:error, _} ->
+            send(self(), {:after_fail_authorize, "bad token"})
+            {:noreply, socket}
+        end
       # user successfully opened treasure
       "treasure:received" ->
         treasure = msg["treasure"]
