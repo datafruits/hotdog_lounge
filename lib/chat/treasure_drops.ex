@@ -12,7 +12,7 @@ defmodule Chat.TreasureDrops do
     Logger.info("Starting Treasure Drops")
 
     # TODO adjust
-    :timer.send_interval(60_000, :futsu_drop)
+    :timer.send_interval(300_000, :futsu_drop)
 
     {:ok, %{}}
   end
