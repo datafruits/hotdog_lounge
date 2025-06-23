@@ -16,21 +16,18 @@ defmodule Chat.MetadataChannel do
   end
 
   def handle_info({:after_join, %{message: message, donation_link: donation_link}}, socket) do
+    Logger.debug "got after_join metadata: #{message}, #{donation_link}, topic: #{socket.topic}"
     push socket, "metadata", %{message: message, donation_link: donation_link}
     {:noreply, socket}
   end
 
-  # Handle the message coming from the Redis PubSub channel
-  def handle_info(%{message: message}, socket) do
-    Logger.debug "got message from pubsub #{message} on #{socket.topic}"
+  def handle_info({:metadata, message}, socket) do
+    push(socket, "metadata", %{message: message})
+    {:noreply, socket}
+  end
 
-    case socket.topic do # not sure if this works
-      "metadata" ->
-        push socket, "metadata", %{message: message}
-      "donation_link" ->
-        push socket, "metadata", %{donation_link: message}
-    end
-
+  def handle_info({:donation_link, message}, socket) do
+    push(socket, "metadata", %{donation_link: message})
     {:noreply, socket}
   end
 end

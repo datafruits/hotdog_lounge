@@ -35,13 +35,13 @@ defmodule Chat.GlobalRedisSubscriber do
         Phoenix.PubSub.broadcast(Chat.PubSub, "user_notifications", %{message: message})
 
       "datafruits:metadata" ->
-        Phoenix.PubSub.broadcast(Chat.PubSub, "metadata", %{message: message})
+        Phoenix.PubSub.broadcast(Chat.PubSub, "metadata", {:message, message})
 
       "datafruits:notifications" ->
         Phoenix.PubSub.broadcast(Chat.PubSub, "notifications", %{message: message})
 
       "datafruits:donation_link" ->
-        Phoenix.PubSub.broadcast(Chat.PubSub, "donation_link", %{message: message})
+        Phoenix.PubSub.broadcast(Chat.PubSub, "donation_link", {:donation_link, message})
 
       "datafruits:chat:bans" ->
         Phoenix.PubSub.broadcast(Chat.PubSub, "bans", %{message: message})
