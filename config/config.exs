@@ -29,7 +29,8 @@ config :chat, Chat.Endpoint,
     "https://beta.streampusher.com/",
     "https://streampusher.com",
     "//datafruits-mojiplode.glitch.me",
-    "//*.glitch.me"
+    "//*.glitch.me",
+    "//*.ondigitalocean.app"
   ]
 
 config :chat, env: Mix.env
