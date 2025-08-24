@@ -4,6 +4,7 @@ defmodule Chat.UserSocket do
 
   channel "rooms:*", Chat.RoomChannel
   channel "metadata", Chat.MetadataChannel
+  channel "vj", Chat.VjChannel
   channel "notifications", Chat.NotificationChannel
   channel "user_notifications", Chat.UserNotificationChannel
 
