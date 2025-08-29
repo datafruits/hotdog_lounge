@@ -19,6 +19,7 @@ defmodule Chat do
       },
       Chat.GlobalRedisSubscriber, # Add the Redis subscriber to the supervision tree
       Chat.TreasureDrops,
+      Chat.NpcAppearance,
       worker(Chat.Presence, [[name: :presence]])
     ]
 
