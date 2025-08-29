@@ -25,8 +25,15 @@ defmodule Chat.RoomChannel do
 
     Phoenix.PubSub.subscribe(Chat.PubSub, "bans")
     Phoenix.PubSub.subscribe(Chat.PubSub, "treasure_drop")
+    Phoenix.PubSub.subscribe(Chat.PubSub, "npc_chat")
 
     {:ok, socket}
+  end
+
+  def handle_info(%{body: body, npc_name: npc_name, timestamp: timestamp}, socket) do
+    Logger.debug("sending npc chat: #{npc_name}")
+    broadcast! socket, "new:msg", %{user: "", body: body, timestamp: timestamp}
+    {:noreply, socket}
   end
 
   def handle_info(%{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}, socket) do
