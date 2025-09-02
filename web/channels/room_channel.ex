@@ -60,7 +60,10 @@ defmodule Chat.RoomChannel do
     broadcast! socket, "user:entered", %{user: msg["user"]}
     #logs = ChatLog.get_logs(socket.topic)
     #Logger.info("logs: #{inspect logs}")
-    push socket, "join", %{status: "connected"}
+    { :ok, hype_meter_status } = Redix.command(:redix, ["GET", "datafruits:hype_meter_status"])
+    Logger.info "hype_meter_status in join: #{hype_meter_status}"
+    { :ok, current_limit_break } = Redix.command(:redix, ["GET", "datafruits:limit_break_meter"])
+    push socket, "join", %{status: "connected", hype_meter_status: hype_meter_status, limit_break_percentage: current_limit_break}
     push socket, "presence_state", Presence.list(socket)
     push socket, "fruit_counts", get_fruit_counts()
     {:noreply, socket}
@@ -110,11 +113,78 @@ defmodule Chat.RoomChannel do
       "new:fruit_tip" ->
         {:ok, total_count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "total", 1])
         {:ok, count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "#{msg["fruit"]}", 1])
-        # might need user id here?
+
         {:ok, user_count} = Redix.command(:redix, ["HINCRBY", "datafruits:user_fruit_count:#{msg["user"]}", "#{msg["fruit"]}", 1])
+
         Logger.info "fruit count: #{count}"
+        Logger.info msg
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         if(msg["isFruitSummon"] == true) do
+          { :ok, hype_meter_status } = Redix.command(:redix, ["GET", "datafruits:hype_meter_status"])
+          Logger.info "hype_meter_status: #{hype_meter_status}"
+          if hype_meter_status == "active" do
+            Logger.info "sending activate limit break"
+            broadcast! socket, "limit_break_activate", %{timestamp: msg["timestamp"]}
+            current_limit_break = case Redix.command(:redix, ["GET", "datafruits:limit_break_meter"]) do
+              { :ok, value } ->
+                Logger.info "got value: #{value}"
+                case value do
+                  _ when is_integer(value) ->
+                    Logger.info("its an integer")
+                    value
+                  _ when is_float(value) ->
+                    Logger.info("its a float ")
+                    value
+                  "" ->
+                    Logger.info("its blank string")
+                    0
+                  nil ->
+                    Logger.info("its nil")
+                    0
+                  _ when is_binary(value) ->
+                    case Float.parse(value) do
+                      {parsed_value, _rest} when is_integer(parsed_value) ->
+                        Logger.info("parsed as integer from string")
+                        parsed_value
+
+                      {parsed_value, _rest} when is_float(parsed_value) ->
+                        Logger.info("parsed as float from string")
+                        parsed_value
+
+                      :error ->
+                        Logger.info("not an integer or float")
+                        0
+                    end
+                end
+            end
+            Logger.info "current_limit_break: #{current_limit_break}"
+            cost = msg["cost"]
+            new_limit_break = current_limit_break + (cost * 0.025)
+            Logger.info "new_limit_break: #{new_limit_break}"
+            Redix.command(:redix, ["SET", "datafruits:limit_break_meter", new_limit_break])
+            broadcast! socket, "limit_break_increase", %{user: msg["user"], timestamp: msg["timestamp"], percentage: new_limit_break}
+            if new_limit_break >= 100 do
+              Logger.info "limit break reached!"
+              # trigger combo
+              # reset to 0 here
+              Redix.command(:redix, ["SET", "datafruits:limit_break_meter", 0.0])
+              Redix.command(:redix, ["SET", "datafruits:hype_meter_status", "inactive"])
+              # For now pick a random combo ???
+              # later, influence combo by which fruits/summons were sent during the limit break
+              #   mega cabbage bounce
+              #   the glorpening??
+              #   fruit sundae spiral
+              #   3D strawbur wink
+              #   grandpa beans shake
+              #   futsu
+              #
+              #   chat destroyed...
+              #   virus popups
+              broadcast! socket, "limit_break_reached", %{user: msg["user"], timestamp: msg["timestamp"], percentage: new_limit_break, combo: "fruit-smoothie"}
+              broadcast! socket, "new:msg", %{user: "coach", body: "LIMIT BREAK ACTIVATED !!! FRUIT SMOOTHIE!!! #{Chat.Dingers.random_dingers()}", timestamp: msg["timestamp"]}
+              broadcast! socket, "limit_break_deactivate", %{timestamp: msg["timestamp"]}
+            end
+          end
           broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! #{Chat.Dingers.random_dingers()}", timestamp: msg["timestamp"]}
         end
         # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
