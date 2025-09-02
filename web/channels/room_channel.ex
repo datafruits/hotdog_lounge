@@ -104,13 +104,10 @@ defmodule Chat.RoomChannel do
 
         {:ok, user_count} = Redix.command(:redix, ["HINCRBY", "datafruits:user_fruit_count:#{msg["user"]}", "#{msg["fruit"]}", 1])
 
-        # if new user fruit count hit a multiple of 100, increase limit break or pre-limit break by 1
         Logger.info "fruit count: #{count}"
         Logger.info msg
         broadcast! socket, "new:fruit_tip", %{user: msg["user"], fruit: msg["fruit"], timestamp: msg["timestamp"], count: count, total_count: total_count}
         if(msg["isFruitSummon"] == true) do
-          # add to limit break meter here ???
-          # { :ok, current_limit_break } = Redix.command(:redix, ["GET", "datafruits:limit_break_meter"])
           { :ok, hype_meter_status } = Redix.command(:redix, ["GET", "datafruits:hype_meter_status"])
           Logger.info "hype_meter_status: #{hype_meter_status}"
           if hype_meter_status == "active" do
@@ -292,13 +289,4 @@ defmodule Chat.RoomChannel do
     Logger.info counts
     counts
   end
-
-  # defp is_limit_break_activated() do
-  # end
-  #
-  # defp add_to_pre_limit_break() do
-  # end
-  #
-  # defp add_to_limit_break() do
-  # end
 end
