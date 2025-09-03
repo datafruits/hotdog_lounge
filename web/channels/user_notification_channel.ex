@@ -22,7 +22,8 @@ defmodule Chat.UserNotificationChannel do
 
   defp send_to_discord(msg) do
     Logger.debug "in UserNotificationChannel send_to_discord"
-    unless msg["bot"] == true do
+    Logger.info("env: #{Config.config_env()}")
+    unless msg["bot"] == true && Config.config_env() == :prod do
       avatar_url = if Map.has_key? msg, "avatarUrl" do
         msg["avatarUrl"]
       else
