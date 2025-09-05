@@ -5,6 +5,7 @@ defmodule Chat.GlobalRedisSubscriber do
   @redis_channels [
     "datafruits:user_notifications",
     "datafruits:metadata",
+    "datafruits:canonical_metadata",
     "datafruits:notifications",
     "datafruits:donation_link",
     "datafruits:chat:bans"
@@ -36,6 +37,9 @@ defmodule Chat.GlobalRedisSubscriber do
 
       "datafruits:metadata" ->
         Phoenix.PubSub.broadcast(Chat.PubSub, "metadata", {:message, message})
+
+      "datafruits:canonical_metadata" ->
+        Phoenix.PubSub.broadcast(Chat.PubSub, "canonical_metadata", {:message, message})
 
       "datafruits:notifications" ->
         Phoenix.PubSub.broadcast(Chat.PubSub, "notifications", %{message: message})
