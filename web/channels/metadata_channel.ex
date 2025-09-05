@@ -2,7 +2,7 @@ defmodule Chat.MetadataChannel do
   use Phoenix.Channel
   require Logger
 
-  def join("metadata", message, socket) do
+  def join("metadata", _message, socket) do
     Phoenix.PubSub.subscribe(Chat.PubSub, "metadata")
     Phoenix.PubSub.subscribe(Chat.PubSub, "canonical_metadata")
     Phoenix.PubSub.subscribe(Chat.PubSub, "donation_link")
@@ -36,7 +36,7 @@ defmodule Chat.MetadataChannel do
     {:noreply, socket}
   end
 
-  def handle_info({:canonical_metadata, message}, socket) do
+  def handle_info({:canonical_metadata, _message}, socket) do
     push(socket, "canonical_metadata", %{message: canonical_metadata()})
     {:noreply, socket}
   end

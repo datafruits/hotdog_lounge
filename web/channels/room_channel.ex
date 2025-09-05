@@ -29,6 +29,10 @@ defmodule Chat.RoomChannel do
     {:ok, socket}
   end
 
+  def join("rooms:" <> _private_subtopic, _message, _socket) do
+    {:error, %{reason: "unauthorized"}}
+  end
+
   def handle_info(%{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}, socket) do
     Logger.debug("sending treasure drop: #{uuid}")
     broadcast! socket, "new:msg", %{user: "Futsu", body: "Coo! I've dropped a treasure package!", is_treasure: true, treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp, avatarUrl: "https://datafruits.fm/assets/images/emojis//futsu.png", role: "bot"}
@@ -49,10 +53,6 @@ defmodule Chat.RoomChannel do
     Logger.debug "done"
 
     {:noreply, socket}
-  end
-
-  def join("rooms:" <> _private_subtopic, _message, _socket) do
-    {:error, %{reason: "unauthorized"}}
   end
 
   def handle_info({:after_join, msg}, socket) do
@@ -84,7 +84,7 @@ defmodule Chat.RoomChannel do
       pronouns: msg["pronouns"],
       username: msg["user"]
     })
-    {:ok, message} = Redix.command(:redix, ["SADD", "datafruits:chat:sockets", "#{socket.id}:#{msg["user"]}"])
+    {:ok, _message} = Redix.command(:redix, ["SADD", "datafruits:chat:sockets", "#{socket.id}:#{msg["user"]}"])
     {:noreply, socket}
   end
 
@@ -98,7 +98,7 @@ defmodule Chat.RoomChannel do
     Logger.info "> leave #{inspect socket}"
     Logger.info "> leave #{socket.assigns[:user]}"
     broadcast! socket, "user:left", %{user: socket.assigns[:user]}
-    {:ok, message} = Redix.command(:redix, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
+    {:ok, _message} = Redix.command(:redix, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
     :ok
   end
 
@@ -107,12 +107,12 @@ defmodule Chat.RoomChannel do
     Logger.info "handle_in event: #{inspect event}, #{inspect msg}, #{inspect socket}"
     case event do
       "track_playback" ->
-        { :ok, count } = Redix.command(:redix, ["HINCRBY", "datafruits:track_plays", "#{msg["track_id"]}", 1])
+        { :ok, _count } = Redix.command(:redix, ["HINCRBY", "datafruits:track_plays", "#{msg["track_id"]}", 1])
       "new:fruit_tip" ->
         {:ok, total_count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "total", 1])
         {:ok, count} = Redix.command(:redix, ["HINCRBY", "datafruits:fruits", "#{msg["fruit"]}", 1])
 
-        {:ok, user_count} = Redix.command(:redix, ["HINCRBY", "datafruits:user_fruit_count:#{msg["user"]}", "#{msg["fruit"]}", 1])
+        {:ok, _user_count} = Redix.command(:redix, ["HINCRBY", "datafruits:user_fruit_count:#{msg["user"]}", "#{msg["fruit"]}", 1])
 
         Logger.info "fruit count: #{count}"
         Logger.info msg
@@ -220,7 +220,7 @@ defmodule Chat.RoomChannel do
         user = msg["user"]
         token = msg["token"]
         # TODO auth
-        case Chat.Token.verify_and_validate(msg["token"]) do
+        case Chat.Token.verify_and_validate(token) do
           {:ok, claims} ->
             claimed_username = claims["username"]
             if claimed_username == user do
@@ -236,9 +236,9 @@ defmodule Chat.RoomChannel do
         treasure = msg["treasure"]
         amount = msg["amount"]
         user = msg["user"]
-        uuid = msg["uuid"]
-        token = msg["token"]
         # TODO auth
+        # uuid = msg["uuid"]
+        # token = msg["token"]
 
         message = case treasure do
           "fruit_tickets" -> "@#{user} got #{amount} fruit tickets!"
@@ -282,7 +282,7 @@ defmodule Chat.RoomChannel do
         {:noreply, socket}
       "disconnect" ->
         broadcast! socket, "user:left", %{user: socket.assigns[:user]}
-        {:ok, message} = Redix.command(:redix, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
+        {:ok, _message} = Redix.command(:redix, ["SREM", "datafruits:chat:sockets", "#{socket.id}:#{socket.assigns[:user]}"])
         {:reply, {:ok, %{msg: "#{msg["user"]} disconnected"}}, socket}
     end
   end
