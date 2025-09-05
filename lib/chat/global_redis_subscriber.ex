@@ -51,7 +51,7 @@ defmodule Chat.GlobalRedisSubscriber do
         Phoenix.PubSub.broadcast(Chat.PubSub, "bans", %{message: message})
 
       _ ->
-        Logger.warn("Received message from unknown channel: #{channel}")
+        Logger.warning("Received message from unknown channel: #{channel}")
     end
 
     {:noreply, state}

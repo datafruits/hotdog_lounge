@@ -11,7 +11,7 @@ defmodule Chat.NotificationChannel do
     {:ok, socket}
   end
 
-  def handle_info({:after_join, message}, socket) do
+  def handle_info({:after_join, _message}, socket) do
     {:noreply, socket}
   end
 

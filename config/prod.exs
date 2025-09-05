@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 # For production, we configure the host to read the PORT
 # from the system environment. Therefore, you will need
@@ -26,14 +26,6 @@ config :chat, Chat.Endpoint,
 
 # Do not print debug messages in production
 config :logger, level: :debug
-
-config :exredis,
-  host: System.get_env("REDIS_HOST"),
-  port: 6379,
-  password: System.get_env("REDIS_PASSWORD"),
-  db: 0,
-  reconnect: :no_reconnect,
-  max_queue: :infinity
 
 # ## Using releases
 #

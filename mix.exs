@@ -4,7 +4,7 @@ defmodule Chat.Mixfile do
   def project do
     [app: :chat,
      version: "0.0.1",
-     elixir: "~> 1.0",
+     elixir: "~> 1.15",
      elixirc_paths: elixirc_paths(Mix.env),
      compilers: [:phoenix] ++ Mix.compilers,
      build_embedded: Mix.env == :prod,
@@ -33,11 +33,10 @@ defmodule Chat.Mixfile do
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:jason, "~> 1.0"},
      {:poison, "~> 5.0"},
-     {:exredis, ">= 0.2.4"},
-     {:redix, ">= 0.0.0"},
+     {:redix, "~> 1.5"},
      {:plug_cowboy, "~> 2.0"},
      {:plug, "~> 1.7"},
-     {:joken, "~> 2.0"},
+     {:joken, "~> 2.6"},
      { :uuid, "~> 1.1" }]
   end
 end

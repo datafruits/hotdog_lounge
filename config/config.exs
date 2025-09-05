@@ -3,7 +3,7 @@
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-use Mix.Config
+import Config
 
 # Configures the endpoint
 config :chat, Chat.Endpoint,
@@ -11,7 +11,7 @@ config :chat, Chat.Endpoint,
   root: Path.expand("..", __DIR__),
   secret_key_base: "/RjKJmMO6raXPRTq63qTqid1x6lVKTOP+FTxZHfX6Ogd+1xYmH6eZZFhBu1CIwtg",
   debug_errors: false,
-  pubsub: [name: Chat.PubSub, adapter: Phoenix.PubSub.PG2],
+  pubsub_server: Chat.PubSub,
   check_origin: [
     "//datafruitstest.s3-website-us-east-1.amazonaws.com/",
     "//localhost:4200",
@@ -33,20 +33,12 @@ config :chat, Chat.Endpoint,
     "//*.ondigitalocean.app"
   ]
 
-config :chat, env: Mix.env
+config :chat, env: config_env()
 
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
-
-config :exredis,
-  host: "127.0.0.1",
-  port: 6379,
-  password: "",
-  db: 0,
-  reconnect: :no_reconnect,
-  max_queue: :infinity
 
 config :joken, default_signer: System.get_env("JWT_SECRET")
 
@@ -54,4 +46,4 @@ config :phoenix, :json_library, Jason
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{Mix.env}.exs"
+import_config "#{config_env()}.exs"
