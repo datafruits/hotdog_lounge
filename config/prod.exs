@@ -27,14 +27,6 @@ config :chat, Chat.Endpoint,
 # Do not print debug messages in production
 config :logger, level: :debug
 
-config :exredis,
-  host: System.get_env("REDIS_HOST"),
-  port: 6379,
-  password: System.get_env("REDIS_PASSWORD"),
-  db: 0,
-  reconnect: :no_reconnect,
-  max_queue: :infinity
-
 # ## Using releases
 #
 # If you are doing OTP releases, you need to instruct Phoenix

@@ -33,10 +33,10 @@ defmodule Chat.Mixfile do
      {:phoenix_live_reload, "~> 1.0", only: :dev},
      {:jason, "~> 1.0"},
      {:poison, "~> 5.0"},
-     {:redix, ">= 0.0.0"},
+     {:redix, "~> 1.5"},
      {:plug_cowboy, "~> 2.0"},
      {:plug, "~> 1.7"},
-     {:joken, "~> 2.0"},
+     {:joken, "~> 2.6"},
      { :uuid, "~> 1.1" }]
   end
 end

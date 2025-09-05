@@ -4,22 +4,16 @@ defmodule Chat do
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
-    import Supervisor.Spec, warn: false
 
     children = [
       # Start the endpoint when the application starts
-      supervisor(Chat.Endpoint, []),
-      # Here you could define other workers and supervisors as children
-      # worker(Chat.Worker, [arg1, arg2, arg3]),
-      #worker(ChatLog, [[name: :chat_log]]),
+      Chat.Endpoint,
       {Redix, name: :redix, host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD")},
-      %{
-        id: Chat.Redix.PubSub,
-        start: {Redix.PubSub, :start_link, [[host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"), name: Chat.Redix.PubSub]]},
-      },
+      {Redix.PubSub, host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"), name: Chat.Redix.PubSub},
+
       Chat.GlobalRedisSubscriber, # Add the Redis subscriber to the supervision tree
       Chat.TreasureDrops,
-      worker(Chat.Presence, [[name: :presence]])
+      {Chat.Presence, [name: :presence]}
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

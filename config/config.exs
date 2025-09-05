@@ -40,14 +40,6 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :exredis,
-  host: "127.0.0.1",
-  port: 6379,
-  password: "",
-  db: 0,
-  reconnect: :no_reconnect,
-  max_queue: :infinity
-
 config :joken, default_signer: System.get_env("JWT_SECRET")
 
 config :phoenix, :json_library, Jason
