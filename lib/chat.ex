@@ -8,10 +8,11 @@ defmodule Chat do
     children = [
       # Start the endpoint when the application starts
       Chat.Endpoint,
+      {Phoenix.PubSub, [name: Chat.PubSub, adapter: Phoenix.PubSub.PG2]},
       {Redix, name: :redix, host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD")},
       {Redix.PubSub, host: System.get_env("REDIS_HOST"), password: System.get_env("REDIS_PASSWORD"), name: Chat.Redix.PubSub},
 
-      Chat.GlobalRedisSubscriber, # Add the Redis subscriber to the supervision tree
+      Chat.GlobalRedisSubscriber,
       Chat.TreasureDrops,
       {Chat.Presence, [name: :presence]}
     ]

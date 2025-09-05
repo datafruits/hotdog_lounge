@@ -58,8 +58,6 @@ defmodule Chat.RoomChannel do
   def handle_info({:after_join, msg}, socket) do
     Logger.debug("handle_info: #{Socket}")
     broadcast! socket, "user:entered", %{user: msg["user"]}
-    #logs = ChatLog.get_logs(socket.topic)
-    #Logger.info("logs: #{inspect logs}")
     { :ok, hype_meter_status } = Redix.command(:redix, ["GET", "datafruits:hype_meter_status"])
     Logger.info "hype_meter_status in join: #{hype_meter_status}"
     { :ok, current_limit_break } = Redix.command(:redix, ["GET", "datafruits:limit_break_meter"])
@@ -187,7 +185,6 @@ defmodule Chat.RoomChannel do
           end
           broadcast! socket, "new:msg", %{user: "coach", body: "#{msg["user"]} summoned #{msg["fruit"]} !!! #{Chat.Dingers.random_dingers()}", timestamp: msg["timestamp"]}
         end
-        # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
         if msg["bot"] == true && msg["avatarUrl"] do
@@ -196,7 +193,6 @@ defmodule Chat.RoomChannel do
           broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
         end
         send_to_discord msg
-        # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
         {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "new:msg_with_token" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
@@ -209,7 +205,6 @@ defmodule Chat.RoomChannel do
               broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
                 timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"]}
               send_to_discord msg
-              # ChatLog.log_message(socket.topic, %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]})
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
           {:error, _} ->
