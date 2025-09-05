@@ -2,6 +2,7 @@ defmodule Chat.RoomChannel do
   use Phoenix.Channel
   alias Chat.Presence
   require Logger
+  require Config
 
   @max_nick_length 30
 

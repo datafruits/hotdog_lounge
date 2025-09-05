@@ -1,6 +1,7 @@
 defmodule Chat.UserNotificationChannel do
   use Phoenix.Channel
   require Logger
+  require Config
 
   def join("user_notifications", _message, socket) do
     # Subscribe the channel to Phoenix PubSub
