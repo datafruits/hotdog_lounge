@@ -20,6 +20,26 @@ config :hotdog_lounge, HotdogLoungeWeb.Endpoint,
     layout: false
   ],
   pubsub_server: HotdogLounge.PubSub,
+  check_origin: [
+     "//datafruitstest.s3-website-us-east-1.amazonaws.com/",
+     "//localhost:4200",
+     "//192.168.0.30:4200",
+     "//localhost:3000",
+     "//localhost:7357",
+     "//datafruits.fm",
+     "//datafruits-fastboot.herokuapp.com/",
+     "//www.datafruits.fm",
+     "https://datafruits.fm",
+     "https://www.datafruits.fm",
+     "https://datafruits-photobooth.glitch.me",
+     "//*.netlify.app",
+     "//datafruitsfm.netlify.app/",
+     "https://beta.streampusher.com/",
+     "https://streampusher.com",
+     "//datafruits-mojiplode.glitch.me",
+     "//*.glitch.me",
+    "//*.ondigitalocean.app"
+  ],
   live_view: [signing_salt: "4FAn0x0H"]
 
 # Configures the mailer
