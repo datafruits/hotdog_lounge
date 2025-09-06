@@ -1,9 +1,9 @@
-defmodule HotdogLoungeWeb.ChannelCase do
+defmodule HotdogLoungeWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
-  channel tests.
+  tests that require setting up a connection.
 
-  Such tests rely on `Phoenix.ChannelTest` and also
+  Such tests rely on `Phoenix.ConnTest` and also
   import other functionality to make it easier
   to build common data structures and query the data layer.
 
@@ -11,7 +11,7 @@ defmodule HotdogLoungeWeb.ChannelCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use HotdogLoungeWeb.ChannelCase, async: true`, although
+  by setting `use HotdogLoungeWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -19,17 +19,20 @@ defmodule HotdogLoungeWeb.ChannelCase do
 
   using do
     quote do
-      # Import conveniences for testing with channels
-      import Phoenix.ChannelTest
-      import HotdogLoungeWeb.ChannelCase
-
       # The default endpoint for testing
       @endpoint HotdogLoungeWeb.Endpoint
+
+      use HotdogLoungeWeb, :verified_routes
+
+      # Import conveniences for testing with connections
+      import Plug.Conn
+      import Phoenix.ConnTest
+      import HotdogLoungeWeb.ConnCase
     end
   end
 
   setup tags do
     HotdogLounge.DataCase.setup_sandbox(tags)
-    :ok
+    {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end
