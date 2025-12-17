@@ -57,7 +57,7 @@ defmodule HotdogLoungeWeb.RoomChannel do
   end
 
   def handle_info({:after_join, msg}, socket) do
-    Logger.debug("handle_info: #{Socket}")
+    Logger.debug("handle_info: #{inspect msg}")
     broadcast! socket, "user:entered", %{user: msg["user"]}
     { :ok, hype_meter_status } = Redix.command(:redix, ["GET", "datafruits:hype_meter_status"])
     Logger.info "hype_meter_status in join: #{hype_meter_status}"
@@ -76,7 +76,9 @@ defmodule HotdogLoungeWeb.RoomChannel do
   def handle_info({:after_authorize, msg}, socket) do
     broadcast! socket, "user:authorized", %{user: msg["user"]}
     Logger.debug "adding user: #{inspect msg}"
-    push socket, "authorized", %{status: "authorized", user: msg["user"], token: msg["token"]}
+    {:ok, recent_emojis } = Redix.command(:redix, ["ZREVRANGE", "datafruits:emoji:recent:#{msg["user"]}", 0, 19])
+    Logger.debug("recent emojis for #{msg["user"]}: #{recent_emojis}")
+    push socket, "authorized", %{status: "authorized", user: msg["user"], token: msg["token"], recent_emojis: recent_emojis}
     {:ok, _} = Presence.track(socket, socket.assigns[:user], %{
       online_at: inspect(System.system_time(:second)),
       avatarUrl: msg["avatarUrl"],
@@ -188,6 +190,10 @@ defmodule HotdogLoungeWeb.RoomChannel do
         end
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
+        # TODO count emojis
+        # - parse emojis from body
+        # {:ok, _user_count} = Redix.command(:redix, ["HINCRBY", "datafruits:user_emoji_count:#{msg["user"]}", "#{msg["fruit"]}", 1])
+        save_emoji_counts msg["emojiCounts"], msg["user"]
         if msg["bot"] == true && msg["avatarUrl"] do
           broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"], role: "bot", avatarUrl: msg["avatarUrl"]}
         else
@@ -198,6 +204,7 @@ defmodule HotdogLoungeWeb.RoomChannel do
       "new:msg_with_token" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
         Logger.debug "token: #{msg["token"]}"
+        save_emoji_counts msg["emojiCounts"], msg["user"]
         # check token
         case HotdogLounge.Token.verify_and_validate(msg["token"]) do
           {:ok, claims} ->
@@ -324,5 +331,13 @@ defmodule HotdogLoungeWeb.RoomChannel do
     counts = Enum.map(keys, fn x -> {:ok, count } = Redix.command(:redix, ["HGET", "datafruits:fruits", x]); {x, count} end) |> Enum.into(%{})
     Logger.info counts
     counts
+  end
+
+  defp save_emoji_counts(emojiCounts, user) do
+    now = System.system_time(:second)
+    Enum.each(emojiCounts, fn {emoji, count} ->
+      {:ok, _user_count} = Redix.command(:redix, ["HINCRBY", "datafruits:user_emoji_count:#{user}", "#{emoji}", count])
+      Redix.command(:redix, ["ZADD", "datafruits:emoji:recent:#{user}", "#{now}", emoji])
+    end)
   end
 end
