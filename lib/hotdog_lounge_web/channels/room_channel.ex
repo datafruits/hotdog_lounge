@@ -190,9 +190,6 @@ defmodule HotdogLoungeWeb.RoomChannel do
         end
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
-        # TODO count emojis
-        # - parse emojis from body
-        # {:ok, _user_count} = Redix.command(:redix, ["HINCRBY", "datafruits:user_emoji_count:#{msg["user"]}", "#{msg["fruit"]}", 1])
         save_emoji_counts msg["emojiCounts"], msg["user"]
         if msg["bot"] == true && msg["avatarUrl"] do
           broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"], role: "bot", avatarUrl: msg["avatarUrl"]}
