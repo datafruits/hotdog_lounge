@@ -190,7 +190,9 @@ defmodule HotdogLoungeWeb.RoomChannel do
         end
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
-        save_emoji_counts msg["emojiCounts"], msg["user"]
+        if msg["emojiCounts"] do
+          save_emoji_counts msg["emojiCounts"], msg["user"]
+        end
         if msg["bot"] == true && msg["avatarUrl"] do
           broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"], role: "bot", avatarUrl: msg["avatarUrl"]}
         else
@@ -201,7 +203,9 @@ defmodule HotdogLoungeWeb.RoomChannel do
       "new:msg_with_token" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
         Logger.debug "token: #{msg["token"]}"
-        save_emoji_counts msg["emojiCounts"], msg["user"]
+        if msg["emojiCounts"] do
+          save_emoji_counts msg["emojiCounts"], msg["user"]
+        end
         # check token
         case HotdogLounge.Token.verify_and_validate(msg["token"]) do
           {:ok, claims} ->
