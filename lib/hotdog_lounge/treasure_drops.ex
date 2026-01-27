@@ -18,13 +18,40 @@ defmodule HotdogLoungeWeb.TreasureDrops do
   end
 
   def handle_info(:futsu_drop, state) do
+    # TODO increase rate during limit break
     if :rand.uniform(10) == 1 do
       treasure = Enum.random(@treasures)
-      amount = if treasure == :bonezo, do: 0, else: :rand.uniform(100)
+
+      base_amount = if treasure == "bonezo", do: 0, else: :rand.uniform(100)
+      {amount, double_bonus} =
+        case treasure do
+          "fruit_tickets" ->
+            if :rand.uniform(20) == 1 do
+              Logger.info("DOUBLE fruit tix!")
+              {base_amount * 2, true}
+            else
+              {base_amount, false}
+            end
+          "glorp_points" ->
+            if :rand.uniform(50) == 1 do
+              Logger.info("DOUBLE glorp points!")
+              {base_amount * 2, true}
+            else
+              {base_amount, false}
+            end
+          "bonezo" ->
+            Logger.info("double bonezo???")
+            {base_amount, false}
+          _ ->
+            Logger.info("what kinda treasure is it")
+            {base_amount, false}
+        end
+      # TODO double amount during limit break * current limit break level
       uuid = UUID.uuid4()
       timestamp = :erlang.system_time(:millisecond)
 
-      payload = %{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}
+      payload = %{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp, double_bonus: double_bonus}
+      Logger.info("sending payload...#{inspect(payload)}")
 
       Phoenix.PubSub.broadcast(HotdogLounge.PubSub, "treasure_drop", payload)
     end

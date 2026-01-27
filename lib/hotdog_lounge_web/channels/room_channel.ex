@@ -34,9 +34,9 @@ defmodule HotdogLoungeWeb.RoomChannel do
     {:error, %{reason: "unauthorized"}}
   end
 
-  def handle_info(%{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp}, socket) do
+  def handle_info(%{treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp, double_bonus: double_bonus}, socket) do
     Logger.debug("sending treasure drop: #{uuid}")
-    broadcast! socket, "new:msg", %{user: "Futsu", body: "Coo! I've dropped a treasure package!", is_treasure: true, treasure: treasure, amount: amount, uuid: uuid, timestamp: timestamp, avatarUrl: "https://datafruits.fm/assets/images/emojis//futsu.png", role: "bot"}
+    broadcast! socket, "new:msg", %{user: "Futsu", body: "Coo! I've dropped a treasure package!", is_treasure: true, treasure: treasure, amount: amount, double_bonus: double_bonus, uuid: uuid, timestamp: timestamp, avatarUrl: "https://datafruits.fm/assets/images/emojis//futsu.png", role: "bot"}
     {:noreply, socket}
   end
 
@@ -226,6 +226,7 @@ defmodule HotdogLoungeWeb.RoomChannel do
         uuid = msg["uuid"]
         treasure = msg["treasure"]
         amount = msg["amount"]
+        double_bonus = msg["double_bonus"]
         user = msg["user"]
         token = msg["token"]
         # TODO auth
@@ -233,7 +234,7 @@ defmodule HotdogLoungeWeb.RoomChannel do
           {:ok, claims} ->
             claimed_username = claims["username"]
             if claimed_username == user do
-              broadcast! socket, "treasure:opened", %{user: user, treasure: treasure, amount: amount, uuid: uuid}
+              broadcast! socket, "treasure:opened", %{user: user, treasure: treasure, amount: amount, double_bonus: double_bonus, uuid: uuid}
               {:noreply, socket}
             end
           {:error, _} ->
@@ -245,6 +246,7 @@ defmodule HotdogLoungeWeb.RoomChannel do
         treasure = msg["treasure"]
         amount = msg["amount"]
         user = msg["user"]
+        double_bonus = msg["double_bonus"]
         # TODO auth
         # uuid = msg["uuid"]
         # token = msg["token"]
@@ -253,7 +255,8 @@ defmodule HotdogLoungeWeb.RoomChannel do
           "fruit_tickets" -> "@#{user} got #{amount} fruit tickets!"
           "glorp_points" -> "@#{user} got #{amount} glorp points!"
           "bonezo" -> "@#{user} got... BONEZO! Nothing! Better luck next time!"
-        end
+        end <>
+          if(double_bonus, do: " :airhorn: LUCKY :airhorn: DOUBLE BONUS!!!", else: "")
 
         Logger.debug "sending new:msg for treasure received..."
         new_uuid = UUID.uuid4()
