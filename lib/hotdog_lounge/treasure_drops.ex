@@ -46,7 +46,13 @@ defmodule HotdogLoungeWeb.TreasureDrops do
             Logger.info("what kinda treasure is it")
             {base_amount, false}
         end
-      # TODO double amount during limit break * current limit break level
+      {:ok, hype_meter_status} = Redix.command(:redix, ["GET", "datafruits:hype_meter_status"])
+      amount = if hype_meter_status == "active" do
+        round(amount * 1.75)
+      else
+        amount
+      end
+
       uuid = UUID.uuid4()
       timestamp = :erlang.system_time(:millisecond)
 
