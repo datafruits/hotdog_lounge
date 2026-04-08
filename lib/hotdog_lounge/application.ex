@@ -9,7 +9,7 @@ defmodule HotdogLounge.Application do
   def start(_type, _args) do
     children = [
       HotdogLoungeWeb.Telemetry,
-      # HotdogLounge.Repo,
+      HotdogLounge.Repo,
       {DNSCluster, query: Application.get_env(:hotdog_lounge, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: HotdogLounge.PubSub},
       # Start a worker by calling: HotdogLounge.Worker.start_link(arg)
