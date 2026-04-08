@@ -1,12 +1,10 @@
 defmodule HotdogLounge.Repo.Migrations.CreateStreampusherTables do
   use Ecto.Migration
 
-  @moduledoc """
-  Creates the show_series and scheduled_shows tables mirroring the existing
-  Rails (streampusher-api) schema. In production these tables already exist in
-  the shared Postgres database; this migration is here so that the local dev
-  and test databases have the same structure.
-  """
+  # Creates the show_series and scheduled_shows tables mirroring the existing
+  # Rails (streampusher-api) schema. In production these tables already exist in
+  # the shared Postgres database; this migration is here so that the local dev
+  # and test databases have the same structure.
 
   def change do
     create_if_not_exists table(:show_series) do

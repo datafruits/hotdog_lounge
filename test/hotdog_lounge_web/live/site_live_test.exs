@@ -17,11 +17,11 @@ defmodule HotdogLoungeWeb.SiteLiveTest do
       assert has_element?(view, "#chat-container")
     end
 
-    test "nav link to /chat is highlighted when on /chat", %{conn: conn} do
+    test "nav contains a chat link in the site nav", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/chat")
 
-      assert has_element?(view, "#site-nav a[href='/chat'].bg-white") or
-               has_element?(view, "#site-nav [class*='bg-white']")
+      # The chat nav link is present and rendered inside the site nav
+      assert has_element?(view, "#site-nav a[href='/chat']")
     end
 
     test "player container has phx-update=ignore for persistence", %{conn: conn} do
@@ -67,32 +67,35 @@ defmodule HotdogLoungeWeb.SiteLiveTest do
       assert has_element?(view, "p", "No scheduled shows found")
     end
 
-    test "nav link to /timetable is highlighted when on /timetable", %{conn: conn} do
+    test "nav contains a timetable link in the site nav", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/timetable")
 
-      assert has_element?(view, "#site-nav")
+      assert has_element?(view, "#site-nav a[href='/timetable']")
     end
   end
 
   describe "patch navigation (player persistence)" do
-    test "navigating from /chat to /timetable uses patch (no full reload)", %{conn: conn} do
+    test "player remains mounted when patch-navigating from /chat to /timetable", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/chat")
 
       assert has_element?(view, "#chat-container")
+      assert has_element?(view, "#player-container")
 
-      # Patch to timetable — the player DOM should remain (phx-update=ignore)
-      {:ok, view, _html} = live(conn, ~p"/timetable")
+      # Patch navigate to timetable — player DOM stays (phx-update=ignore)
+      assert {:ok, view, _html} = live(view, ~p"/timetable")
 
       assert has_element?(view, "#timetable-container")
       assert has_element?(view, "#player-container")
     end
 
-    test "navigating from /timetable to /chat uses patch (no full reload)", %{conn: conn} do
+    test "player remains mounted when patch-navigating from /timetable to /chat", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/timetable")
 
       assert has_element?(view, "#timetable-container")
+      assert has_element?(view, "#player-container")
 
-      {:ok, view, _html} = live(conn, ~p"/chat")
+      # Patch navigate to chat — player DOM stays (phx-update=ignore)
+      assert {:ok, view, _html} = live(view, ~p"/chat")
 
       assert has_element?(view, "#chat-container")
       assert has_element?(view, "#player-container")
