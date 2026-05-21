@@ -13,7 +13,7 @@ defmodule HotdogLounge.Discord do
           username: msg["user"],
           avatar_url: avatar_url,
           content: msg["body"],
-          allowed_mentions: {
+          allowed_mentions: %{
             parse: []
           }
         })
