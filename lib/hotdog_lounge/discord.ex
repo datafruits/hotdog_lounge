@@ -12,7 +12,10 @@ defmodule HotdogLounge.Discord do
         Jason.encode!(%{
           username: msg["user"],
           avatar_url: avatar_url,
-          content: msg["body"]
+          content: msg["body"],
+          allowed_mentions: {
+            parse: []
+          }
         })
 
       Logger.debug("json for discord webhook")
