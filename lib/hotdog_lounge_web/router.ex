@@ -18,6 +18,8 @@ defmodule HotdogLoungeWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    live "/chat", SiteLive, :chat
+    live "/timetable", SiteLive, :timetable
   end
 
   # Other scopes may use custom stacks.

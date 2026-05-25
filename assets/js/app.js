@@ -26,10 +26,50 @@ import {hooks as colocatedHooks} from "phoenix-colocated/hotdog_lounge"
 import topbar from "../vendor/topbar"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+
+// Player hook: initializes the audio player once and keeps it alive across LiveView patches.
+const PlayerHook = {
+  mounted() {
+    this.audio = this.el.querySelector("#player-audio")
+    this.playBtn = this.el.querySelector("#player-play-btn")
+    this.volumeInput = this.el.querySelector("#player-volume")
+
+    if (this.audio) {
+      // Restore volume
+      const savedVolume = parseFloat(localStorage.getItem("df:volume") || "0.8")
+      this.audio.volume = savedVolume
+      if (this.volumeInput) this.volumeInput.value = savedVolume
+
+      if (this.playBtn) {
+        this.playBtn.addEventListener("click", () => this.togglePlay())
+        this.audio.addEventListener("play", () => { this.playBtn.textContent = "⏸" })
+        this.audio.addEventListener("pause", () => { this.playBtn.textContent = "▶" })
+        this.audio.addEventListener("ended", () => { this.playBtn.textContent = "▶" })
+      }
+
+      if (this.volumeInput) {
+        this.volumeInput.addEventListener("input", (e) => {
+          this.audio.volume = parseFloat(e.target.value)
+          localStorage.setItem("df:volume", e.target.value)
+        })
+      }
+    }
+  },
+
+  togglePlay() {
+    if (!this.audio) return
+    if (this.audio.paused) {
+      this.audio.play()
+    } else {
+      this.audio.pause()
+    }
+  }
+}
+
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: {...colocatedHooks, Player: PlayerHook},
 })
 
 // Show progress bar on live navigation and form submits
