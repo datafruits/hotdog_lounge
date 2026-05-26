@@ -5,7 +5,31 @@
 datafruits.fm chat server, simply some modifications to
 https://github.com/chrismccord/phoenix_chat_example
 
-[Install elixir](https://elixir-lang.org/install.html) if you haven't already.
+## Installing Elixir & Erlang
+
+This project uses [asdf](https://asdf-vm.com) to manage language versions. The required versions are pinned in `.tool-versions`:
+
+- **Erlang 26.2**
+- **Elixir 1.15.8-otp-26**
+- **Node.js 22.18.0**
+
+To install them:
+
+```bash
+# Install asdf (if not already installed)
+git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.0
+# Add to your shell profile: . "$HOME/.asdf/asdf.sh"
+
+# Add plugins
+asdf plugin add erlang
+asdf plugin add elixir
+asdf plugin add nodejs
+
+# Install the versions specified in .tool-versions
+asdf install
+```
+
+> **Note:** Building Erlang requires some system dependencies. See the [erlang-otp build guide](https://github.com/asdf-vm/asdf-erlang#before-asdf-install) for your OS.
 
 You should also have a redis server running for the app to connect to.
 
