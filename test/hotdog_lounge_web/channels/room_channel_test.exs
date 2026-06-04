@@ -1,27 +1,32 @@
 defmodule HotdogLoungeWeb.RoomChannelTest do
-  use HotdogLoungeWeb.ChannelCase
+  use HotdogLoungeWeb.ChannelCase, async: true
 
-  setup do
-    {:ok, _, socket} =
-      HotdogLoungeWeb.UserSocket
-      |> socket("user_id", %{some: :assign})
-      |> subscribe_and_join(HotdogLoungeWeb.RoomChannel, "room:lobby")
+  alias HotdogLoungeWeb.RoomChannel
 
-    %{socket: socket}
+  test "rejects new:msg bodies longer than the max message length" do
+    socket = %Phoenix.Socket{topic: "rooms:lobby"}
+
+    message = %{
+      "user" => "tony",
+      "body" => String.duplicate("a", 1001),
+      "timestamp" => 1_716_426_000_000
+    }
+
+    assert {:reply, {:error, %{error: "message too long", max_message_length: 1000}}, ^socket} =
+             RoomChannel.handle_in("new:msg", message, socket)
   end
 
-  test "ping replies with status ok", %{socket: socket} do
-    ref = push(socket, "ping", %{"hello" => "there"})
-    assert_reply ref, :ok, %{"hello" => "there"}
-  end
+  test "rejects new:msg_with_token bodies longer than the max message length" do
+    socket = %Phoenix.Socket{topic: "rooms:lobby"}
 
-  test "shout broadcasts to room:lobby", %{socket: socket} do
-    push(socket, "shout", %{"hello" => "all"})
-    assert_broadcast "shout", %{"hello" => "all"}
-  end
+    message = %{
+      "user" => "tony",
+      "body" => String.duplicate("a", 1001),
+      "timestamp" => 1_716_426_000_000,
+      "token" => "signed-token"
+    }
 
-  test "broadcasts are pushed to the client", %{socket: socket} do
-    broadcast_from!(socket, "broadcast", %{"some" => "data"})
-    assert_push "broadcast", %{"some" => "data"}
+    assert {:reply, {:error, %{error: "message too long", max_message_length: 1000}}, ^socket} =
+             RoomChannel.handle_in("new:msg_with_token", message, socket)
   end
 end

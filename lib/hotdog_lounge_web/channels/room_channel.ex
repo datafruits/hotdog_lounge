@@ -5,6 +5,7 @@ defmodule HotdogLoungeWeb.RoomChannel do
   require Logger
 
   @max_nick_length 30
+  @max_message_length 1000
 
   @doc """
   Authorize socket to subscribe and broadcast events on this channel & topic
@@ -190,35 +191,45 @@ defmodule HotdogLoungeWeb.RoomChannel do
         end
         {:reply, {:ok, %{fruit: msg["fruit"]}}, socket}
       "new:msg" ->
-        if msg["emojiCounts"] do
-          save_emoji_counts msg["emojiCounts"], msg["user"]
+        case validate_message_length(msg) do
+          :ok ->
+            if msg["emojiCounts"] do
+              save_emoji_counts msg["emojiCounts"], msg["user"]
+            end
+            if msg["bot"] == true && msg["avatarUrl"] do
+              broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"], role: "bot", avatarUrl: msg["avatarUrl"]}
+            else
+              broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
+            end
+            HotdogLounge.Discord.send_to_discord msg
+            {:reply, {:ok, %{msg: msg["body"]}}, socket}
+          {:error, error} ->
+            {:reply, {:error, error}, socket}
         end
-        if msg["bot"] == true && msg["avatarUrl"] do
-          broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"], role: "bot", avatarUrl: msg["avatarUrl"]}
-        else
-          broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"], timestamp: msg["timestamp"]}
-        end
-        HotdogLounge.Discord.send_to_discord msg
-        {:reply, {:ok, %{msg: msg["body"]}}, socket}
       "new:msg_with_token" ->
         Logger.debug "#{msg["timestamp"]} -- sending new message from #{msg["user"]} : #{msg["body"]}"
         Logger.debug "token: #{msg["token"]}"
-        if msg["emojiCounts"] do
-          save_emoji_counts msg["emojiCounts"], msg["user"]
-        end
-        # check token
-        case HotdogLounge.Token.verify_and_validate(msg["token"]) do
-          {:ok, claims} ->
-            claimed_username = claims["username"]
-            if claimed_username == msg["user"] do
-              broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
-                timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"]}
-              HotdogLounge.Discord.send_to_discord msg
-              {:reply, {:ok, %{msg: msg["body"]}}, socket}
+        case validate_message_length(msg) do
+          :ok ->
+            if msg["emojiCounts"] do
+              save_emoji_counts msg["emojiCounts"], msg["user"]
             end
-          {:error, _} ->
-            send(self(), {:after_fail_authorize, "bad token"})
-            {:noreply, socket}
+            # check token
+            case HotdogLounge.Token.verify_and_validate(msg["token"]) do
+              {:ok, claims} ->
+                claimed_username = claims["username"]
+                if claimed_username == msg["user"] do
+                  broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
+                    timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"]}
+                  HotdogLounge.Discord.send_to_discord msg
+                  {:reply, {:ok, %{msg: msg["body"]}}, socket}
+                end
+              {:error, _} ->
+                send(self(), {:after_fail_authorize, "bad token"})
+                {:noreply, socket}
+            end
+          {:error, error} ->
+            {:reply, {:error, error}, socket}
         end
       # user tries to open treasure
       "treasure:open" ->
@@ -329,6 +340,16 @@ defmodule HotdogLoungeWeb.RoomChannel do
       end
     # end
   end
+
+  defp validate_message_length(%{"body" => body}) when is_binary(body) do
+    if String.length(body) > @max_message_length do
+      {:error, %{error: "message too long", max_message_length: @max_message_length}}
+    else
+      :ok
+    end
+  end
+
+  defp validate_message_length(_msg), do: :ok
 
   defp get_fruit_counts() do
     {:ok, keys} = Redix.command(:redix, ["HKEYS", "datafruits:fruits"])
