@@ -212,7 +212,8 @@ defmodule HotdogLoungeWeb.RoomChannel do
             claimed_username = claims["username"]
             if claimed_username == msg["user"] do
               broadcast! socket, "new:msg", %{user: msg["user"], body: msg["body"],
-                timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"]}
+                timestamp: msg["timestamp"], role: msg["role"], avatarUrl: msg["avatarUrl"], style: msg["style"], pronouns: msg["pronouns"],
+                customEmojis: msg["customEmojis"]}
               HotdogLounge.Discord.send_to_discord msg
               {:reply, {:ok, %{msg: msg["body"]}}, socket}
             end
