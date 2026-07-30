@@ -102,4 +102,16 @@
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
+/* Datafruits brand colors */
+:root {
+  --df-pink: #ff69b4;
+  --df-pink-light: #ffb3d9;
+  --df-dark: #1a1a2e;
+}
+
+.bg-df-pink { background-color: var(--df-pink); }
+.bg-df-dark { background-color: var(--df-dark); }
+.text-df-pink { color: var(--df-pink); }
+.text-df-pink-light { color: var(--df-pink-light); }
+
 /* This file is for your main application CSS */

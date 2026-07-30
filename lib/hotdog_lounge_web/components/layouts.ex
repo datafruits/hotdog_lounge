@@ -73,6 +73,108 @@ defmodule HotdogLoungeWeb.Layouts do
   end
 
   @doc """
+  Renders the datafruits site shell layout with a top nav, scrollable main
+  content area, and a persistent bottom player region.
+
+  The player container uses `phx-update="ignore"` so LiveView never re-renders
+  it, allowing audio to continue playing through patch-based navigation.
+
+  ## Examples
+
+      <Layouts.site_shell flash={@flash} live_action={@live_action}>
+        <p>Page content here</p>
+      </Layouts.site_shell>
+
+  """
+  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr :live_action, :atom, default: nil, doc: "the current live action (:chat or :timetable)"
+
+  slot :inner_block, required: true
+
+  def site_shell(assigns) do
+    ~H"""
+    <div class="min-h-screen flex flex-col bg-df-dark text-white">
+      <%!-- Top navigation --%>
+      <nav class="flex items-center justify-between px-4 py-2 bg-df-pink text-white flex-shrink-0" id="site-nav">
+        <a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <img src={~p"/images/logo.svg"} alt="datafruits.fm" width="32" height="32" class="rounded" />
+          <span class="font-bold text-lg tracking-wide">datafruits.fm</span>
+        </a>
+        <ul class="flex items-center gap-2 text-base font-semibold">
+          <li>
+            <.link
+              patch={~p"/chat"}
+              class={[
+                "px-3 py-1 rounded transition-colors",
+                if(@live_action == :chat, do: "bg-white text-df-pink", else: "hover:bg-white/20")
+              ]}
+            >
+              💬 Chat
+            </.link>
+          </li>
+          <li>
+            <.link
+              patch={~p"/timetable"}
+              class={[
+                "px-3 py-1 rounded transition-colors",
+                if(@live_action == :timetable, do: "bg-white text-df-pink", else: "hover:bg-white/20")
+              ]}
+            >
+              📅 Timetable
+            </.link>
+          </li>
+        </ul>
+      </nav>
+
+      <%!-- Main content area (scrollable, grows to fill space between nav and player) --%>
+      <main class="flex-1 overflow-auto" id="main-content">
+        {render_slot(@inner_block)}
+      </main>
+
+      <%!-- Persistent bottom player region.
+           phx-update="ignore": LiveView will not re-render this node on navigation.
+           phx-hook="Player": JS hook initializes audio once and handles play/pause/volume. --%>
+      <div
+        id="player-container"
+        phx-update="ignore"
+        phx-hook="Player"
+        class="flex-shrink-0 bg-df-pink text-white px-4 py-2 flex items-center gap-4 border-t border-white/10"
+      >
+        <div class="flex items-center gap-3 flex-1">
+          <button
+            id="player-play-btn"
+            class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center text-lg"
+            aria-label="Play/Pause"
+          >
+            ▶
+          </button>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-sm truncate" id="player-show-title">datafruits.fm</p>
+            <p class="text-xs text-white/70 truncate" id="player-dj-name">live radio</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="player-volume" class="sr-only">Volume</label>
+          <input
+            id="player-volume"
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value="0.8"
+            class="w-20 accent-white"
+            aria-label="Volume"
+          />
+        </div>
+        <audio id="player-audio" src="https://stream.datafruits.fm/stream" preload="none"></audio>
+      </div>
+    </div>
+
+    <.flash_group flash={@flash} />
+    """
+  end
+
+  @doc """
   Shows the flash group with standard titles and content.
 
   ## Examples
