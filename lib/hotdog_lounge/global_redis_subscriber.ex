@@ -27,13 +27,22 @@ defmodule HotdogLoungeWeb.GlobalRedisSubscriber do
     {:ok, %{}}
   end
 
-  def handle_info({:redix_pubsub, _redix_pid, _ref, :message, %{channel: channel, payload: message}}, state) do
+  def handle_info(
+        {:redix_pubsub, _redix_pid, _ref, :message, %{channel: channel, payload: message}},
+        state
+      ) do
     Logger.debug("Received message from Redis on #{channel}: #{message}")
 
     # Broadcast the message to Phoenix PubSub based on the channel it came from
     case channel do
       "datafruits:user_notifications" ->
         Phoenix.PubSub.broadcast(HotdogLounge.PubSub, "user_notifications", %{message: message})
+
+        # Deliver once per Redis notification, independently of connected browsers.
+        HotdogLounge.Discord.send_to_discord(%{
+          "user" => "coach",
+          "body" => "#{message} !!! #{HotdogLounge.Dingers.random_dingers()}"
+        })
 
       "datafruits:metadata" ->
         Phoenix.PubSub.broadcast(HotdogLounge.PubSub, "metadata", {:message, message})
